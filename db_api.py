@@ -19,7 +19,6 @@ def get_daily_stats(target_date):
     all_types = supabase.table("equipment_types").select("equipment_type_id, equipment_type").execute().data
     all_eqs = supabase.table("equipments").select("registration_number, equipment_type_id").execute().data
     
-    # 해당 날짜(00:00~23:59) 사이의 점검 로그 조회
     logs = supabase.table("inspection_logs") \
         .select("registration_number") \
         .filter("created_at", "gte", f"{target_date}T00:00:00") \
