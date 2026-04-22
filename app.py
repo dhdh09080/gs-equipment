@@ -6,14 +6,13 @@ from PIL import Image
 from datetime import datetime, timedelta
 import pandas as pd
 
-# --- [UI] 고령자 맞춤형 및 GS E&C 모바일 스타일 CSS ---
+# --- [UI] 고령자 맞춤형 및 가로 폭 가득 채우는 CSS ---
 st.markdown("""
     <style>
     /* 배경색 (GS E&C 스타일 밝은 회색) */
     body, .stApp { background-color: #f4f5f7 !important; }
     
-    /* 🔥 1. 입력창 & 셀렉트박스 글자 잘림(Clipping) 완벽 해결 🔥 */
-    /* 높이를 강제하지 않고 글자 크기만 키워 기본 레이아웃 존중 */
+    /* 1. 입력창 & 셀렉트박스 글자 잘림 완벽 해결 */
     .stTextInput input, .stSelectbox div[data-baseweb="select"] {
         font-size: 1.1rem !important;
     }
@@ -23,7 +22,7 @@ st.markdown("""
         color: #122d43 !important;
     }
 
-    /* 2. 관리자 탭 (홈, 일일점검현황, 관리) 및 카드 디자인 */
+    /* 2. 관리자 탭 및 카드 디자인 */
     div.stTabs [data-baseweb="tab-list"] { background-color: white; padding: 0; border-bottom: 2px solid #e9ecef; }
     div.stTabs [data-baseweb="tab"] { font-size: 18px !important; font-weight: bold; padding: 15px 20px; }
     
@@ -32,32 +31,57 @@ st.markdown("""
         margin-bottom: 15px; box-shadow: 0px 2px 5px rgba(0,0,0,0.05); border: 1px solid #e9ecef;
     }
 
-    /* 3. 라디오 버튼 -> 4색상 대형 블록 버튼화 */
-    div[data-testid="stRadio"] > div[role="radiogroup"] {
-        display: flex !important; flex-direction: row !important; gap: 8px !important; width: 100% !important;
+    /* 🔥 3. 라디오 버튼 -> 가로 100% 꽉 채우는 4색상 블록 버튼화 🔥 */
+    /* 부모 컨테이너들도 무조건 100% 너비를 가지도록 강제 */
+    div[data-testid="stRadio"], 
+    div[data-testid="stRadio"] > div {
+        width: 100% !important;
     }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label {
-        flex: 1 !important; display: flex !important; justify-content: center !important; align-items: center !important;
-        padding: 18px 0px !important; border-radius: 8px !important; margin: 0 !important;
-        border: 2px solid transparent !important; cursor: pointer !important; transition: all 0.2s ease !important;
+    
+    div[data-testid="stRadio"] div[role="radiogroup"] {
+        display: flex !important; 
+        flex-direction: row !important; 
+        gap: 8px !important; 
+        width: 100% !important;
+        justify-content: space-between !important;
     }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:first-child { display: none !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label p {
-        margin: 0 !important; padding: 0 !important; font-weight: 900 !important; font-size: 18px !important;
+    
+    /* 각 옵션 박스가 정확히 1/n 비율로 확장되도록 설정 (flex: 1 1 0px) */
+    div[data-testid="stRadio"] div[role="radiogroup"] > label {
+        flex: 1 1 0px !important; 
+        width: 100% !important;
+        display: flex !important; 
+        justify-content: center !important; 
+        align-items: center !important;
+        padding: 15px 0px !important; 
+        border-radius: 8px !important; 
+        margin: 0 !important;
+        border: 2px solid transparent !important; 
+        cursor: pointer !important; 
+        transition: all 0.2s ease !important;
+    }
+    
+    div[data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child { display: none !important; }
+    
+    /* 글자 줄바꿈(수리/요) 절대 금지 */
+    div[data-testid="stRadio"] div[role="radiogroup"] > label p {
+        margin: 0 !important; padding: 0 !important; 
+        font-weight: 900 !important; font-size: 18px !important;
+        white-space: nowrap !important; word-break: keep-all !important; display: block !important;
     }
 
-    /* 버튼 색상 지정 (양호/수리요/불량/기타) */
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(1) { background-color: #78be20 !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(1) * { color: white !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(2) { background-color: #f2a900 !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(2) * { color: white !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(3) { background-color: #cf4520 !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(3) * { color: white !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(4) { background-color: #75787b !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(4) * { color: white !important; }
+    /* 버튼 색상 지정 */
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(1) { background-color: #78be20 !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(1) * { color: white !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(2) { background-color: #f2a900 !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(2) * { color: white !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(3) { background-color: #cf4520 !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(3) * { color: white !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(4) { background-color: #75787b !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(4) * { color: white !important; }
 
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:not(:checked)) { opacity: 0.25 !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:checked) {
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:has(input:not(:checked)) { opacity: 0.25 !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:has(input:checked) {
         opacity: 1.0 !important; transform: scale(1.02) !important;
         box-shadow: 0px 4px 8px rgba(0,0,0,0.2) !important; border: 2px solid #122d43 !important;
     }
@@ -68,7 +92,7 @@ st.markdown("""
     @media (max-width: 768px) {
         html, body, [class*="st-"] { font-size: 16px !important; }
         .stButton button { font-size: 18px !important; padding: 12px !important; }
-        div[data-testid="stRadio"] > div[role="radiogroup"] > label p { font-size: 16px !important; }
+        div[data-testid="stRadio"] div[role="radiogroup"] > label p { font-size: 16px !important; }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -148,16 +172,16 @@ if st.session_state.role == "Admin":
     stats = db_api.get_daily_stats(date_str)
     logs = db_api.get_daily_logs_summary(date_str)
 
-    # 🌟 수정사항 2 & 3: 홈 화면 장비 리스트 및 비율 표시
+    # 🌟 수정사항 2 & 3: 점검 장비 현황 1/2 형식으로 깔끔하게 표시
     with menu[0]: 
         total_completed = sum(s['completed'] for s in stats)
         total_equipments = sum(s['total'] for s in stats)
-        st.markdown(f"### 📊 전체 점검 진행률: 총 {total_equipments}대 중 {total_completed}대 완료")
+        st.markdown(f"### 📊 점검 장비 현황 {total_completed}/{total_equipments}")
         
         if stats:
             for s in stats:
-                # 굴삭기: 5대 중 4대 완료 아코디언 메뉴
-                with st.expander(f"🚜 {s['type']} : 총 {s['total']}대 중 {s['completed']}대 완료"):
+                # 굴삭기 1/2 형식으로 아코디언 메뉴 이름 변경
+                with st.expander(f"🚜 {s['type']} {s['completed']}/{s['total']}"):
                     col_done, col_pending = st.columns(2)
                     with col_done:
                         st.markdown("**✅ 점검 완료**")
@@ -176,7 +200,6 @@ if st.session_state.role == "Admin":
         else:
             st.info("등록된 장비 데이터가 없습니다.")
 
-    # 🌟 수정사항 1: 일일점검 리스트 중복(반복) 항목 제거
     with menu[1]: 
         st.markdown("### 일일점검 리스트")
         if logs:
@@ -206,7 +229,6 @@ if st.session_state.role == "Admin":
                 else: dots = "🟢 전항목 양호"
 
                 with st.expander(f"🚜 {data['partner']} | {data['type']}({data['model']}) | {reg}  ➔ {dots}"):
-                    # 중복 기록 제거 로직 (최신 기록 1개만 남김)
                     unique_items = {}
                     for d in data['details']:
                         item_data = d.get('inspection_items') or {}
@@ -214,14 +236,13 @@ if st.session_state.role == "Admin":
                         if item_name not in unique_items:
                             unique_items[item_name] = d
                     
-                    # 중복이 제거된 유니크한 항목들만 출력
                     for item_name, d in unique_items.items():
                         note = f"({d.get('inspection_note')})" if d.get('inspection_note') else ""
                         st.write(f"- **{item_name}**: {d.get('status', '알수없음')} {note}")
         else:
             st.info("해당 날짜에 점검된 기록이 없습니다.")
 
-    with menu[2]: # 3. 관리 탭
+    with menu[2]: 
         st.markdown("### 시스템 관리")
         admin_tabs = st.tabs(["🏢 업체 관리", "📋 장비/체크리스트 관리", "🛠️ 장비 마스터"])
         
@@ -301,11 +322,9 @@ if st.session_state.role == "Admin":
                         else: st.error(msg)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- 엑셀 다운로드 플로팅 버튼 ---
     if stats and logs:
         df_stats = pd.DataFrame(stats)
         logs_formatted = []
-        # 중복이 포함된 전체 로그를 시간순으로 엑셀에 담습니다 (감사용)
         for l in logs:
             pt_name = l.get("partners", {}).get("partner_name", "") if l.get("partners") else ""
             eq_data = l.get("equipments") or {}
@@ -344,12 +363,12 @@ else:
     
     if st.session_state.worker_step == "input":
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        reg = st.text_input("1️⃣ 장비 번호 입력 (예: 01가1234)", placeholder="터치하여 입력하세요").replace(" ", "")
+        reg = st.text_input("1️⃣ 장비 번호 입력 (예: 01가1234)", placeholder="터치하여 입력하세요", label_visibility="collapsed").replace(" ", "")
         
         st.write("")
         partners = db_api.get_partners(project_code)
         p_names = [p['partner_name'] for p in partners]
-        sel_p = st.selectbox("2️⃣ 소속 업체 선택", options=["여기를 눌러 선택하세요"] + p_names)
+        sel_p = st.selectbox("2️⃣ 소속 업체 선택", options=["여기를 눌러 선택하세요"] + p_names, label_visibility="collapsed")
         
         st.write("") 
         if st.button("🚀 점검 시작하기", type="primary", use_container_width=True):
