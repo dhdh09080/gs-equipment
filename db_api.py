@@ -15,18 +15,15 @@ supabase: Client = init_connection()
 # [1] 관리자 대시보드 및 통계
 # ==========================================
 def get_daily_stats(target_date):
-    """(홈) 장비 종류별 점검 완료/미완료 상세 통계"""
     all_types = supabase.table("equipment_types").select("equipment_type_id, equipment_type").execute().data
     all_eqs = supabase.table("equipments").select("registration_number, equipment_type_id, equipment_model").execute().data
     
-    # 점검 로그에서 파트너 정보까지 함께 가져옵니다.
     logs = supabase.table("inspection_logs") \
         .select("registration_number, partners(partner_name)") \
         .filter("created_at", "gte", f"{target_date}T00:00:00") \
         .filter("created_at", "lte", f"{target_date}T23:59:59") \
         .execute().data
     
-    # 점검을 완료한 장비 번호와 해당 업체를 매핑
     completed_info = {}
     for l in logs:
         reg = l['registration_number']
@@ -37,7 +34,6 @@ def get_daily_stats(target_date):
     stats = []
     for t in all_types:
         t_id = t['equipment_type_id']
-        # 해당 종류에 속하는 모든 등록 장비
         type_eqs = [e for e in all_eqs if e['equipment_type_id'] == t_id]
         
         completed_list = []
@@ -51,7 +47,7 @@ def get_daily_stats(target_date):
             else:
                 pending_list.append({"reg": reg, "model": model, "partner": "미점검 (업체미정)"})
                 
-        if type_eqs: # 등록된 장비가 1대라도 있는 종류만 통계에 포함
+        if type_eqs:
             stats.append({
                 "type": t['equipment_type'],
                 "total": len(type_eqs),
@@ -62,9 +58,9 @@ def get_daily_stats(target_date):
     return stats
 
 def get_daily_logs_summary(target_date):
-    """(일일점검현황 탭) 그날 점검한 장비 리스트와 상태 요약"""
+    # 🔥 수정: 개별 항목을 식별하기 위해 'id' 컬럼을 함께 불러옵니다.
     res = supabase.table("inspection_logs") \
-        .select("created_at, registration_number, inspector, status, inspection_note, partners(partner_name), equipments(equipment_types(equipment_type), equipment_model), inspection_items(item_name)") \
+        .select("id, created_at, registration_number, inspector, status, inspection_note, partners(partner_name), equipments(equipment_types(equipment_type), equipment_model), inspection_items(item_name)") \
         .filter("created_at", "gte", f"{target_date}T00:00:00") \
         .filter("created_at", "lte", f"{target_date}T23:59:59") \
         .order("created_at", desc=True) \
@@ -74,6 +70,19 @@ def get_daily_logs_summary(target_date):
 def get_daily_logs_for_excel(target_date):
     return get_daily_logs_summary(target_date)
 
+# 🔥 신규: 점검 기록 개별 수정/삭제 함수
+def update_inspection_log(log_id, new_status, new_note):
+    """점검 기록의 상태와 비고를 수정합니다."""
+    data = {"status": new_status, "inspection_note": new_note}
+    return supabase.table("inspection_logs").update(data).eq("id", log_id).execute()
+
+def delete_inspection_log(log_id):
+    """점검 기록을 삭제합니다."""
+    return supabase.table("inspection_logs").delete().eq("id", log_id).execute()
+
+# ==========================================
+# [기타 유지 코드들 (장비/업체 관리 등)]
+# ==========================================
 def get_all_equipments():
     return supabase.table("equipments").select("*, equipment_types(equipment_type)").execute().data
 
@@ -86,11 +95,8 @@ def delete_equipment(reg_number):
         supabase.table("equipments").delete().eq("registration_number", reg_number).execute()
         return True, "삭제 성공"
     except Exception as e:
-        return False, "점검 기록이 남아있는 장비는 삭제할 수 없습니다. (데이터 보호)"
+        return False, "점검 기록이 남아있는 장비는 삭제할 수 없습니다."
 
-# ==========================================
-# [2] 업체 관리
-# ==========================================
 def get_partners(project_code):
     return supabase.table("partners").select("*").eq("project_code", project_code).execute().data
 
@@ -100,9 +106,6 @@ def add_partner(project_code, partner_name):
 def delete_partner(partner_id):
     return supabase.table("partners").delete().eq("partner_id", partner_id).execute()
 
-# ==========================================
-# [3] 체크리스트 & 장비 종류 관리
-# ==========================================
 def get_equipment_types():
     return supabase.table("equipment_types").select("*").order("equipment_type_id").execute().data
 
@@ -130,9 +133,6 @@ def delete_inspection_item(item_id):
     except Exception as e:
         return False, f"오류 발생: {str(e)}"
 
-# ==========================================
-# [4] 근로자 점검 및 장비 등록
-# ==========================================
 def check_equipment_exists(reg):
     res = supabase.table("equipments").select("*, equipment_types(*)").eq("registration_number", reg).execute()
     return res.data[0] if res.data else None
