@@ -80,24 +80,22 @@ if st.session_state.role == "Admin":
             if c2.button("삭제", key=f"p_{p['partner_id']}"):
                 db_api.delete_partner(p['partner_id']); st.rerun()
 
-    with menu[2]: # 체크리스트 관리 (Enter 지원)
-        types = db_api.get_equipment_types()
-        t_map = {t['equipment_type']: t['equipment_type_id'] for t in types}
-        sel_t = st.selectbox("장비 종류 선택", options=list(t_map.keys()))
-        t_id = t_map[sel_t]
-        items = db_api.get_items_by_type(t_id)
+    with menu[2]: # 체크리스트 관리
+        # (중략: 장비 선택 로직)
+        items = db_api.get_items_by_type(t_id) # 이제 활성 항목만 불러옵니다.
         
         for it in items:
             it1, it2 = st.columns([0.8, 0.2])
-            it1.write(f"{it['item_number']}. {it['item_name']}")
-            if it2.button("항목 삭제", key=f"it_{it['item_id']}"):
-                db_api.delete_inspection_item(it['item_id']); st.rerun()
-        
-        with st.form("add_item_form", clear_on_submit=True):
-            i_n = st.text_input("새 점검 항목명 입력 (엔터로 저장)")
-            i_d = st.text_area("항목 설명 (선택)")
-            if st.form_submit_button("항목 추가"):
-                if i_n: db_api.add_inspection_item(t_id, i_n, i_d, len(items)+1); st.rerun()
+            it1.write(f"**{it['item_number']}. {it['item_name']}**")
+            
+            # 삭제 버튼 클릭 시 비활성화 로직 실행
+            if it2.button("항목 제외", key=f"it_{it['item_id']}"):
+                success, msg = db_api.delete_inspection_item(it['item_id'])
+                if success:
+                    st.toast(msg) # 하단에 작은 알림 표시
+                    st.rerun()
+                else:
+                    st.error(msg)
 
     with menu[3]: # 장비 마스터 관리 (필터링 추가)
         st.header("🚜 등록 장비 마스터 리스트")
