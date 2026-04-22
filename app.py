@@ -5,42 +5,22 @@ from io import BytesIO
 from PIL import Image
 from datetime import datetime
 
-# --- [고령자 배려] 대형 글자 및 UI 스타일 주입 ---
+# UI 스타일 설정
 st.markdown("""
     <style>
-    /* 전체 기본 글자 크기 상향 */
-    html, body, [class*="st-"] {
-        font-size: 20px !important;
-    }
-    /* 라디오 버튼(체크리스트) 글자 크게 */
-    div[data-baseweb="radio"] div {
-        font-size: 24px !important;
-        font-weight: bold !important;
-    }
-    /* 입력창 라벨 크게 */
-    .stTextInput label, .stSelectbox label, .stTextArea label {
-        font-size: 22px !important;
-        font-weight: bold !important;
-        color: #122d43 !important;
-    }
-    /* 버튼 크기 키우기 */
-    .stButton button {
-        height: 60px !important;
-        font-size: 22px !important;
-    }
+    html, body, [class*="st-"] { font-size: 20px !important; }
+    .stButton button { height: 50px !important; font-size: 20px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-st.set_page_config(page_title="GS E&C 안전관리", layout="centered")
+st.set_page_config(page_title="GS E&C 안전관리", layout="wide")
 
-# --- 세션 상태 관리 ---
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "role" not in st.session_state: st.session_state.role = "Worker"
 if "worker_step" not in st.session_state: st.session_state.worker_step = "input"
 
 project_code = st.query_params.get("projectCode", "GS_PROJECT_001")
 
-# --- 이미지 변환 함수 (사진 업로드용) ---
 def resize_image_to_base64(image_file, max_width=1024):
     img = Image.open(image_file)
     if img.width > max_width:
@@ -51,7 +31,7 @@ def resize_image_to_base64(image_file, max_width=1024):
     img.save(buffered, format="JPEG", quality=85)
     return base64.b64encode(buffered.getvalue()).decode()
 
-# --- 사이드바 로그인 ---
+# --- 사이드바 ---
 with st.sidebar:
     st.title("🛡️ 관리 메뉴")
     if not st.session_state.logged_in:
@@ -77,7 +57,7 @@ with st.sidebar:
 if st.session_state.role == "Admin":
     menu = st.tabs(["📊 이행률", "🏢 업체 관리", "📋 체크리스트", "🚜 장비 마스터"])
     
-    with menu[0]: # 대시보드
+    with menu[0]: # 이행률
         sel_date = st.date_input("날짜 선택", value=datetime.now().date())
         stats = db_api.get_daily_stats(sel_date.strftime("%Y-%m-%d"))
         if stats:
@@ -85,47 +65,73 @@ if st.session_state.role == "Admin":
             for i, s in enumerate(stats):
                 rate = (s['completed'] / s['total'] * 100) if s['total'] > 0 else 0
                 cols[i].metric(s['type'], f"{s['completed']}/{s['total']}", f"{rate:.1f}%")
-        st.dataframe(db_api.get_all_equipments(), use_container_width=True)
 
-    with menu[1]: # 업체 관리
+    with menu[1]: # 업체 관리 (Enter 지원)
+        st.header("협력업체 관리")
+        with st.form("add_partner_form", clear_on_submit=True):
+            new_p = st.text_input("추가할 업체명을 입력하고 엔터를 누르세요")
+            if st.form_submit_button("업체 등록"):
+                if new_p: db_api.add_partner(project_code, new_p); st.rerun()
+        
         partners = db_api.get_partners(project_code)
-        new_p = st.text_input("추가할 업체명")
-        if st.button("업체 등록"):
-            if new_p: db_api.add_partner(project_code, new_p); st.rerun()
         for p in partners:
             c1, c2 = st.columns([0.8, 0.2])
             c1.write(f"• {p['partner_name']}")
             if c2.button("삭제", key=f"p_{p['partner_id']}"):
                 db_api.delete_partner(p['partner_id']); st.rerun()
 
-    with menu[2]: # 체크리스트 관리
+    with menu[2]: # 체크리스트 관리 (Enter 지원)
         types = db_api.get_equipment_types()
         t_map = {t['equipment_type']: t['equipment_type_id'] for t in types}
-        sel_t = st.selectbox("장비 종류", options=list(t_map.keys()))
+        sel_t = st.selectbox("장비 종류 선택", options=list(t_map.keys()))
         t_id = t_map[sel_t]
         items = db_api.get_items_by_type(t_id)
+        
         for it in items:
             it1, it2 = st.columns([0.8, 0.2])
             it1.write(f"{it['item_number']}. {it['item_name']}")
             if it2.button("항목 삭제", key=f"it_{it['item_id']}"):
                 db_api.delete_inspection_item(it['item_id']); st.rerun()
-        with st.expander("➕ 항목 추가"):
-            i_n = st.text_input("항목명"); i_d = st.text_area("설명")
-            if st.button("저장"):
-                db_api.add_inspection_item(t_id, i_n, i_d, len(items)+1); st.rerun()
+        
+        with st.form("add_item_form", clear_on_submit=True):
+            i_n = st.text_input("새 점검 항목명 입력 (엔터로 저장)")
+            i_d = st.text_area("항목 설명 (선택)")
+            if st.form_submit_button("항목 추가"):
+                if i_n: db_api.add_inspection_item(t_id, i_n, i_d, len(items)+1); st.rerun()
+
+    with menu[3]: # 장비 마스터 관리 (필터링 추가)
+        st.header("🚜 등록 장비 마스터 리스트")
+        all_eqs = db_api.get_all_equipments()
+        
+        # 종류별 필터링 기능
+        types_list = ["전체 보기"] + [t['equipment_type'] for t in types]
+        filter_type = st.selectbox("종류별로 보기", options=types_list)
+        
+        # 데이터 가공 및 필터링
+        display_data = []
+        for eq in all_eqs:
+            eq_type = eq['equipment_types']['equipment_type']
+            if filter_type == "전체 보기" or filter_type == eq_type:
+                display_data.append({
+                    "등록번호": eq['registration_number'],
+                    "장비종류": eq_type,
+                    "모델명": eq['equipment_model'] or "-",
+                    "등록일": eq['created_at'][:10]
+                })
+        
+        st.table(display_data) if display_data else st.info("등록된 장비가 없습니다.")
 
 # ==========================================
 # [WORKER] 근로자 점검 페이지
 # ==========================================
 else:
-    st.title("🚜 장비 일일 점검 (큰 글씨)")
-    
+    # ... (기존 근로자 로직 유지)
+    st.title("🚜 장비 일일 점검")
     if st.session_state.worker_step == "input":
         reg = st.text_input("1. 장비 번호 입력").replace(" ", "")
         partners = db_api.get_partners(project_code)
         p_names = [p['partner_name'] for p in partners]
         sel_p = st.selectbox("2. 소속 업체 선택", options=["선택하세요"] + p_names)
-        
         if st.button("점검 시작하기", type="primary", use_container_width=True):
             if reg and sel_p != "선택하세요":
                 eq = db_api.check_equipment_exists(reg)
@@ -137,8 +143,7 @@ else:
                     st.session_state.worker_step = "checklist"
                 else: st.session_state.worker_step = "register"
                 st.rerun()
-            else: st.warning("번호를 적고 업체를 골라주세요.")
-
+    # ... (생략된 checklist 및 register 로직은 이전과 동일하게 유지)
     elif st.session_state.worker_step == "register":
         st.error("처음 보는 장비입니다. 등록이 필요합니다.")
         types = db_api.get_equipment_types()
