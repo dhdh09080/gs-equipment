@@ -29,17 +29,40 @@ def delete_partner(partner_id):
 # --- [관리자] 체크리스트 관리 ---
 def get_equipment_types():
     return supabase.table("equipment_types").select("*").execute().data
+# db_api.py (주요 수정 부분)
 
 def get_items_by_type(type_id):
-    return supabase.table("inspection_items").select("*").eq("equipment_type_id", type_id).order("item_number").execute().data
-
-def add_inspection_item(type_id, name, desc, number):
-    return supabase.table("inspection_items").insert({
-        "equipment_type_id": type_id, "item_name": name, "item_description": desc, "item_number": number
-    }).execute()
+    """현재 '활성 상태(is_active=True)'인 항목만 가져와서 새 점검에 사용합니다."""
+    return supabase.table("inspection_items") \
+        .select("*") \
+        .eq("equipment_type_id", type_id) \
+        .eq("is_active", True) \
+        .order("item_number") \
+        .execute().data
 
 def delete_inspection_item(item_id):
-    return supabase.table("inspection_items").delete().eq("item_id", item_id).execute()
+    """
+    실제로 삭제하지 않고 '비활성화' 처리합니다.
+    이렇게 하면 과거 inspection_logs에 있는 item_id 참조가 깨지지 않습니다.
+    """
+    try:
+        supabase.table("inspection_items") \
+            .update({"is_active": False, "modified_at": datetime.now().isoformat()}) \
+            .eq("item_id", item_id) \
+            .execute()
+        return True, "항목이 성공적으로 제외되었습니다. (과거 기록은 보존됨)"
+    except Exception as e:
+        return False, f"오류 발생: {str(e)}"
+
+def update_inspection_item(item_id, type_id, new_name, new_desc, new_num):
+    """
+    내용을 수정할 때 기존 것을 고치면 과거 기록의 이름도 바뀌어 버립니다.
+    따라서 [기존 항목 비활성화] -> [새 항목 생성] 방식으로 처리하여 이력을 분리합니다.
+    """
+    # 1. 기존 항목 비활성화
+    delete_inspection_item(item_id)
+    # 2. 새 항목으로 등록 (이 시점부터 새로운 타임스탬프가 적용됨)
+    return add_inspection_item(type_id, new_name, new_desc, new_num)
 
 # --- [공통] 통계 및 점검 로직 ---
 def get_daily_stats(target_date):
