@@ -5,7 +5,7 @@ from io import BytesIO
 from PIL import Image
 from datetime import datetime
 
-# --- [UI] 모바일 최적화 및 대형 네모 버튼 CSS 주입 ---
+# --- [UI] 모바일 최적화 및 4색상 네모 버튼 CSS 주입 ---
 st.markdown("""
     <style>
     /* 1. 기본 버튼 및 텍스트 줄바꿈 설정 */
@@ -21,59 +21,90 @@ st.markdown("""
         word-break: keep-all !important;
     }
 
-    /* 🌟 2. 라디오 버튼을 대형 네모 블록 버튼으로 변환 🌟 */
-    div[data-testid="stRadio"] > div {
-        display: flex;
-        gap: 8px; /* 버튼 사이 간격 */
-        flex-wrap: wrap; /* 화면이 좁으면 밑으로 내려감 */
+    /* 🌟 2. 라디오 버튼을 4색 컬러 블록 버튼으로 완벽 변환 🌟 */
+    
+    /* 가로로 꽉 차게 4등분 배치 */
+    div[data-testid="stRadio"] div[role="radiogroup"] {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 8px !important;
+        flex-wrap: nowrap !important; /* 모바일에서도 무조건 한 줄 유지 */
+        width: 100% !important;
     }
-    div[data-testid="stRadio"] label {
-        background-color: #f1f3f5; /* 기본 회색 배경 */
-        border: 2px solid #dee2e6 !important;
-        border-radius: 12px !important; /* 둥근 네모 */
-        padding: 18px 5px !important; /* 터치 영역 넉넉하게 위아래 패딩 */
-        flex: 1; /* 버튼들이 가로 길이를 똑같이 나눠 가짐 */
-        min-width: 70px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    /* 기본 동그라미 아이콘 숨기기 */
-    div[data-testid="stRadio"] label > div:first-child {
-        display: none !important;
-    }
-    /* 버튼이 선택되었을 때의 스타일 (배경색, 테두리 강조) */
-    div[data-testid="stRadio"] label:has(input:checked) {
-        background-color: #e3f2fd;
-        border-color: #339af0 !important;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    /* 선택된 버튼의 글자 굵게 */
-    div[data-testid="stRadio"] label:has(input:checked) p {
-        color: #1864ab !important;
-        font-weight: 900 !important;
+    
+    /* 각 옵션 라벨을 박스 형태로 디자인 */
+    div[data-testid="stRadio"] div[role="radiogroup"] label {
+        flex: 1 !important; /* 공간을 1/4씩 공평하게 나눠 가짐 */
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 15px 0 !important;
+        border-radius: 8px !important;
+        margin: 0 !important;
+        border: 2px solid transparent !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
     }
 
-    /* 3. 모바일 화면 최적화 (가로 768px 이하) */
+    /* 기본 동그라미 아이콘 완벽하게 숨기기 */
+    div[data-testid="stRadio"] div[role="radiogroup"] label div:first-child {
+        display: none !important;
+    }
+
+    /* 버튼 안의 텍스트 설정 */
+    div[data-testid="stRadio"] div[role="radiogroup"] label p {
+        margin: 0 !important;
+        font-weight: 900 !important;
+        font-size: 16px !important; /* 모바일에서 깨지지 않게 글자크기 조정 */
+        white-space: nowrap !important;
+    }
+
+    /* --- [버튼별 고유 색상 지정] --- */
+    /* 1번: 양호 (초록) */
+    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(1) { background-color: #2b8a3e !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(1) p { color: white !important; }
+
+    /* 2번: 수리요 (노랑) */
+    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(2) { background-color: #fcc419 !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(2) p { color: #212529 !important; }
+
+    /* 3번: 불량 (빨강) */
+    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(3) { background-color: #e03131 !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(3) p { color: white !important; }
+
+    /* 4번: 기타 (회색) */
+    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(4) { background-color: #868e96 !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(4) p { color: white !important; }
+
+    /* --- [선택 및 미선택 상태 시각화] --- */
+    /* 선택되지 않은 버튼은 투명도를 낮춰 흐리게 (선택된 것 강조) */
+    div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:not(:checked)) {
+        opacity: 0.25 !important;
+    }
+    
+    /* 선택된 버튼은 진하게 + 까만 테두리와 그림자 */
+    div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
+        opacity: 1.0 !important;
+        transform: scale(1.02);
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+        border: 2px solid #212529 !important;
+    }
+
+    /* 3. 모바일/데스크탑 반응형 폰트 크기 */
     @media (max-width: 768px) {
         html, body, [class*="st-"] { font-size: 16px !important; }
-        .stButton button { font-size: 16px !important; padding: 0.5rem 0.2rem !important; }
+        .stButton button { font-size: 16px !important; }
         h1 { font-size: 26px !important; }
         h2 { font-size: 22px !important; }
         h3 { font-size: 18px !important; }
-        div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; margin: 0 !important; }
+        div[data-testid="stRadio"] div[role="radiogroup"] label p { font-size: 15px !important; } /* 네 칸이라 약간 작게 */
     }
-
-    /* 4. 데스크탑 화면 (가로 768px 초과) */
     @media (min-width: 769px) {
         html, body, [class*="st-"] { font-size: 20px !important; }
-        .stButton button { font-size: 18px !important; font-weight: bold !important; }
         h1 { font-size: 36px !important; }
         h2 { font-size: 28px !important; }
         h3 { font-size: 24px !important; }
-        div[data-testid="stRadio"] label p { font-size: 20px !important; font-weight: bold !important; margin: 0 !important; }
+        div[data-testid="stRadio"] div[role="radiogroup"] label p { font-size: 18px !important; }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -135,7 +166,7 @@ if st.session_state.role == "Admin":
                 st.progress(rate / 100)
         else: st.info("데이터가 없습니다.")
 
-    with menu[1]: # 2. 업체 관리 (Enter 지원)
+    with menu[1]: # 2. 업체 관리
         st.header("🏢 협력업체 관리")
         with st.form("add_partner_form", clear_on_submit=True):
             new_p = st.text_input("새 업체명 입력 후 Enter")
@@ -231,24 +262,24 @@ else:
         for it in items:
             st.write(f"### {it['item_number']}. {it['item_name']}")
             
-            # CSS로 네모 버튼화 된 라디오 입력
+            # CSS로 네모 버튼화 된 라디오 입력 (이모티콘 제거, 상태 라벨 숨김)
             res = st.radio(
                 "상태", 
-                ["🟢 양호", "🟡 수리요", "🔴 불량", "⚫ 기타"], 
+                ["양호", "수리요", "불량", "기타"], 
                 key=f"r_{it['item_id']}", 
                 horizontal=True, 
                 label_visibility="collapsed"
             )
             
             note, img_b64 = "", ""
-            if res != "🟢 양호":
+            if res != "양호":
                 st.warning("⚠️ 사진 촬영과 메모가 필요합니다.")
                 cam = st.camera_input("📸 사진 촬영", key=f"cam_{it['item_id']}")
                 if cam: img_b64 = resize_image_to_base64(cam)
                 note = st.text_area("📝 조치 사항 입력", key=f"n_{it['item_id']}")
             
             ins_results.append({"id": it['item_id'], "res": res, "note": note, "img": img_b64})
-            st.divider() # 항목 간 구분을 더 명확히
+            st.divider()
         
         if st.button("✅ 점검 결과 최종 제출", type="primary", use_container_width=True):
             for r in ins_results:
