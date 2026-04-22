@@ -4,115 +4,85 @@ import base64
 from io import BytesIO
 from PIL import Image
 from datetime import datetime
+import pandas as pd
 
-# --- [UI] 모바일 최적화 및 컬러 블록 버튼 CSS ---
+# --- [UI] 고령자 맞춤형 초거대 UI 및 시각화 CSS ---
 st.markdown("""
     <style>
-    /* 1. 전체 텍스트 크기 상향 및 줄바꿈 정리 */
-    .stButton button {
-        white-space: nowrap !important;
-        word-break: keep-all !important;
-        min-height: 50px !important;
-        height: auto !important;
-        padding: 0.5rem 1rem !important;
-        width: 100% !important;
-    }
-    div[data-testid="stMarkdownContainer"] p {
-        word-break: keep-all !important;
-    }
-
-    /* 🌟 2. 라디오 버튼 -> 4색상 대형 블록 버튼화 🌟 */
+    /* 배경색을 살짝 어둡게 하여 눈부심 방지, 컨텐츠 박스를 하얗게 띄움 */
+    body { background-color: #f4f6f9 !important; }
     
-    /* 가로로 꽉 차게 4등분 배치 */
+    /* 1. 고령자용 거대 입력창 & 드롭다운 */
+    input, select, textarea {
+        font-size: 22px !important;
+        padding: 15px !important;
+        min-height: 60px !important;
+        border: 2px solid #adb5bd !important;
+        border-radius: 10px !important;
+    }
+    input:focus, select:focus { border-color: #228be6 !important; }
+
+    /* 2. 라디오 버튼 -> 4색상 대형 블록 버튼화 */
     div[data-testid="stRadio"] > div[role="radiogroup"] {
         display: flex !important;
         flex-direction: row !important;
-        gap: 8px !important;
+        gap: 10px !important;
         width: 100% !important;
     }
-    
-    /* 각 옵션을 네모 박스로 만들기 (Flex:1 로 가로를 똑같이 분배) */
     div[data-testid="stRadio"] > div[role="radiogroup"] > label {
         flex: 1 !important; 
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
-        padding: 15px 0px !important; 
-        border-radius: 8px !important;
+        padding: 20px 0px !important; 
+        border-radius: 12px !important;
         margin: 0 !important;
         border: 2px solid transparent !important;
         cursor: pointer !important;
         transition: all 0.2s ease !important;
     }
-
-    /* 🔥 핵심 수정: 동그라미 기호만 정확하게 삭제 (글자는 건드리지 않음) */
     div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:first-child {
         display: none !important;
     }
-
-    /* 글자가 강제로 보이도록 텍스트 영역 속성 강제 부여 */
     div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:last-child,
     div[data-testid="stRadio"] > div[role="radiogroup"] > label p {
-        margin: 0 !important;
-        padding: 0 !important;
-        font-weight: 900 !important;
-        font-size: 17px !important;
-        white-space: nowrap !important;
-        visibility: visible !important;
-        display: block !important;
+        margin: 0 !important; padding: 0 !important;
+        font-weight: 900 !important; font-size: 20px !important;
+        white-space: nowrap !important; display: block !important;
     }
 
-    /* --- [버튼별 고유 배경색 및 글자색 강제 적용] --- */
-    /* 1번: 양호 (초록 바탕, 흰 글씨) */
+    /* 버튼 색상 지정 */
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(1) { background-color: #2b8a3e !important; }
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(1) * { color: white !important; }
-
-    /* 2번: 수리요 (노랑 바탕, 까만 글씨) */
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(2) { background-color: #fcc419 !important; }
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(2) * { color: #212529 !important; }
-
-    /* 3번: 불량 (빨강 바탕, 흰 글씨) */
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(3) { background-color: #e03131 !important; }
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(3) * { color: white !important; }
-
-    /* 4번: 기타 (회색 바탕, 흰 글씨) */
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(4) { background-color: #868e96 !important; }
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(4) * { color: white !important; }
 
-    /* --- [선택 유무에 따른 효과] --- */
-    /* 선택되지 않은 버튼은 투명하게 */
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:not(:checked)) {
-        opacity: 0.3 !important;
-    }
-    
-    /* 선택된 버튼은 튀어나오는 효과와 진한 테두리 */
+    /* 선택 효과 */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:not(:checked)) { opacity: 0.3 !important; }
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:checked) {
-        opacity: 1.0 !important;
-        transform: scale(1.05) !important;
-        box-shadow: 0px 4px 8px rgba(0,0,0,0.2) !important;
-        border: 2px solid #212529 !important;
+        opacity: 1.0 !important; transform: scale(1.05) !important;
+        box-shadow: 0px 6px 12px rgba(0,0,0,0.3) !important;
+        border: 3px solid #212529 !important;
     }
 
-    /* 3. 모바일 화면 최적화 (가로 768px 이하) */
+    /* 3. 모바일 화면 최적화 */
     @media (max-width: 768px) {
-        html, body, [class*="st-"] { font-size: 16px !important; }
-        .stButton button { font-size: 16px !important; }
-        h1 { font-size: 26px !important; }
-        h2 { font-size: 22px !important; }
-        h3 { font-size: 18px !important; }
-        div[data-testid="stRadio"] > div[role="radiogroup"] > label p { font-size: 15px !important; }
-    }
-    @media (min-width: 769px) {
-        html, body, [class*="st-"] { font-size: 20px !important; }
-        h1 { font-size: 36px !important; }
-        h2 { font-size: 28px !important; }
-        h3 { font-size: 24px !important; }
+        html, body, [class*="st-"] { font-size: 18px !important; }
+        .stButton button { font-size: 20px !important; padding: 15px !important; border-radius: 12px !important; }
+        h1 { font-size: 30px !important; }
+        h2 { font-size: 24px !important; }
+        h3 { font-size: 20px !important; margin-bottom: 15px !important;}
         div[data-testid="stRadio"] > div[role="radiogroup"] > label p { font-size: 18px !important; }
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.set_page_config(page_title="GS E&C 안전관리", layout="wide")
+# 🌟 중요: initial_sidebar_state="collapsed" 를 통해 처음에 사이드바를 완벽히 숨깁니다.
+st.set_page_config(page_title="GS E&C 안전관리", layout="wide", initial_sidebar_state="collapsed")
 
 # 세션 상태 초기화
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
@@ -133,20 +103,20 @@ def resize_image_to_base64(image_file, max_width=1024):
 
 # --- 사이드바 ---
 with st.sidebar:
-    st.title("🛡️ 관리자 메뉴")
+    st.title("⚙️ 관리자 전용 메뉴")
     if not st.session_state.logged_in:
-        with st.expander("🔐 로그인 (gsmaster/1234)"):
+        with st.expander("🔐 관리자 로그인"):
             admin_id = st.text_input("ID", value="gsmaster")
             admin_pw = st.text_input("PW", type="password", value="1234")
-            if st.button("로그인 실행"):
+            if st.button("로그인 실행", use_container_width=True):
                 if admin_id == "gsmaster" and admin_pw == "1234":
                     st.session_state.logged_in = True
                     st.session_state.role = "Admin"
                     st.rerun()
                 else: st.error("정보 불일치")
     else:
-        st.success(f"{st.session_state.role} 접속 중")
-        if st.button("로그아웃"):
+        st.success("✅ Admin 접속 중")
+        if st.button("로그아웃", use_container_width=True):
             st.session_state.logged_in = False
             st.session_state.role = "Worker"
             st.rerun()
@@ -155,19 +125,29 @@ with st.sidebar:
 # [ADMIN] 관리자 페이지
 # ==========================================
 if st.session_state.role == "Admin":
-    menu = st.tabs(["📊 이행률", "🏢 업체 관리", "📋 체크리스트", "🚜 장비 마스터"])
+    menu = st.tabs(["📊 이행률 시각화", "🏢 업체 관리", "📋 체크리스트", "🛠️ 장비 관리 (수정/삭제)"])
     
-    with menu[0]: # 1. 이행률 대시보드
-        st.header("📅 일일 점검 현황")
-        sel_date = st.date_input("날짜 선택", value=datetime.now().date())
+    with menu[0]: # 1. 이행률 대시보드 (차트 추가)
+        st.header("📅 일일 점검 현황 대시보드")
+        sel_date = st.date_input("조회할 날짜 선택", value=datetime.now().date())
         stats = db_api.get_daily_stats(sel_date.strftime("%Y-%m-%d"))
+        
         if stats:
+            # 텍스트 메트릭
             cols = st.columns(len(stats))
+            chart_data = []
             for i, s in enumerate(stats):
                 rate = (s['completed'] / s['total'] * 100) if s['total'] > 0 else 0
-                cols[i].metric(s['type'], f"{s['completed']}/{s['total']}대", f"{rate:.1f}%")
-                st.progress(rate / 100)
-        else: st.info("데이터가 없습니다.")
+                cols[i].metric(s['type'], f"{s['completed']} / {s['total']}대", f"{rate:.1f}%")
+                chart_data.append({"장비 종류": s['type'], "완료 대수": s['completed'], "미완료 대수": s['total'] - s['completed']})
+            
+            # 시각화 바 차트 (UI/UX 강화)
+            st.divider()
+            st.subheader("📈 장비별 점검 완료 현황")
+            df = pd.DataFrame(chart_data).set_index("장비 종류")
+            st.bar_chart(df, color=["#2b8a3e", "#e03131"]) # 완료(초록), 미완료(빨강)
+        else: 
+            st.info("데이터가 없습니다.")
 
     with menu[1]: # 2. 업체 관리
         st.header("🏢 협력업체 관리")
@@ -178,7 +158,7 @@ if st.session_state.role == "Admin":
         
         partners = db_api.get_partners(project_code)
         for p in partners:
-            c1, c2 = st.columns([0.7, 0.3])
+            c1, c2 = st.columns([0.8, 0.2])
             c1.write(f"• {p['partner_name']}")
             if c2.button("삭제", key=f"p_{p['partner_id']}"):
                 db_api.delete_partner(p['partner_id']); st.rerun()
@@ -191,7 +171,7 @@ if st.session_state.role == "Admin":
         items = db_api.get_items_by_type(t_id)
         
         for it in items:
-            it1, it2 = st.columns([0.7, 0.3])
+            it1, it2 = st.columns([0.8, 0.2])
             it1.write(f"**{it['item_number']}. {it['item_name']}**")
             if it2.button("항목 제외", key=f"it_{it['item_id']}"):
                 success, msg = db_api.delete_inspection_item(it['item_id'])
@@ -204,35 +184,71 @@ if st.session_state.role == "Admin":
             if st.form_submit_button("항목 저장"):
                 if i_n: db_api.add_inspection_item(t_id, i_n, i_d, len(items)+1); st.rerun()
 
-    with menu[3]: # 4. 장비 마스터
-        st.header("🚜 등록 장비 마스터")
+    with menu[3]: # 4. 장비 마스터 (수정/삭제 기능 완벽 추가)
+        st.header("🛠️ 등록 장비 정보 수정 및 삭제")
         all_eqs = db_api.get_all_equipments()
-        filter_t = st.selectbox("종류 필터", options=["전체 보기"] + [t['equipment_type'] for t in types])
         
-        display = []
-        for eq in all_eqs:
-            etype = eq['equipment_types']['equipment_type']
-            if filter_t == "전체 보기" or filter_t == etype:
-                display.append({
-                    "번호": eq['registration_number'], "종류": etype, 
-                    "모델": eq['equipment_model'] or "-", "등록일": eq['created_at'][:10]
-                })
-        st.table(display)
+        # 장비 선택 드롭다운
+        eq_list = ["선택하세요"] + [f"{eq['registration_number']} ({eq['equipment_types']['equipment_type']})" for eq in all_eqs]
+        selected_eq_label = st.selectbox("수정 또는 삭제할 장비를 선택하세요", options=eq_list)
+        
+        if selected_eq_label != "선택하세요":
+            # 선택한 장비의 실제 번호 추출
+            selected_reg = selected_eq_label.split(" (")[0]
+            target_data = next(eq for eq in all_eqs if eq['registration_number'] == selected_reg)
+            
+            with st.form("edit_eq_form"):
+                st.info(f"현재 선택된 장비: {selected_reg}")
+                new_reg = st.text_input("장비 번호 변경 (선택)", value=target_data['registration_number'])
+                
+                # 기존 장비 종류의 인덱스 찾기
+                types = db_api.get_equipment_types()
+                t_map = {t['equipment_type']: t['equipment_type_id'] for t in types}
+                type_names = list(t_map.keys())
+                current_type_name = target_data['equipment_types']['equipment_type']
+                current_type_idx = type_names.index(current_type_name) if current_type_name in type_names else 0
+                
+                new_type = st.selectbox("장비 종류 변경", options=type_names, index=current_type_idx)
+                new_model = st.text_input("모델명 변경", value=target_data['equipment_model'] or "")
+                
+                col1, col2 = st.columns(2)
+                if col1.form_submit_button("💾 정보 수정 (저장)", type="primary", use_container_width=True):
+                    db_api.update_equipment(selected_reg, new_reg, t_map[new_type], new_model)
+                    st.success("수정되었습니다!")
+                    st.rerun()
+                    
+                if col2.form_submit_button("🗑️ 장비 완전 삭제", use_container_width=True):
+                    success, msg = db_api.delete_equipment(selected_reg)
+                    if success:
+                        st.success(msg)
+                        st.rerun()
+                    else:
+                        st.error(msg)
+        
+        st.divider()
+        st.subheader("전체 장비 리스트 보기")
+        display = [{"번호": eq['registration_number'], "종류": eq['equipment_types']['equipment_type'], "모델": eq['equipment_model'] or "-", "등록일": eq['created_at'][:10]} for eq in all_eqs]
+        st.dataframe(display, use_container_width=True)
 
 # ==========================================
-# [WORKER] 근로자 점검 화면
+# [WORKER] 근로자 점검 화면 (어르신 맞춤형)
 # ==========================================
 else:
-    st.title("🚜 장비 일일 점검")
+    st.title("🚜 장비 일일 안전 점검")
+    st.write("---")
     
     if st.session_state.worker_step == "input":
-        reg = st.text_input("1. 장비 번호 입력").replace(" ", "")
+        st.subheader("1️⃣ 장비 번호를 입력해주세요")
+        reg = st.text_input("장비 번호 (예: 01가1234)", placeholder="터치하여 입력하세요").replace(" ", "")
+        
+        st.subheader("2️⃣ 소속 업체를 선택해주세요")
         partners = db_api.get_partners(project_code)
         p_names = [p['partner_name'] for p in partners]
-        sel_p = st.selectbox("2. 소속 업체 선택", options=["선택하세요"] + p_names)
+        sel_p = st.selectbox("업체 목록", options=["여기를 눌러 업체를 선택하세요"] + p_names)
         
-        if st.button("점검 시작", type="primary", use_container_width=True):
-            if reg and sel_p != "선택하세요":
+        st.write("") # 여백
+        if st.button("🚀 점검 시작하기", type="primary", use_container_width=True):
+            if reg and sel_p != "여기를 눌러 업체를 선택하세요":
                 eq = db_api.check_equipment_exists(reg)
                 st.session_state.temp_reg = reg
                 st.session_state.temp_p_id = next(p['partner_id'] for p in partners if p['partner_name'] == sel_p)
@@ -240,32 +256,36 @@ else:
                 if eq:
                     st.session_state.eq_data = eq
                     st.session_state.worker_step = "checklist"
-                else: st.session_state.worker_step = "register"
+                else: 
+                    st.session_state.worker_step = "register"
                 st.rerun()
+            else: 
+                st.error("⚠️ 장비 번호와 업체를 모두 확인해주세요.")
 
     elif st.session_state.worker_step == "register":
-        st.error("미등록 장비입니다. 등록을 진행합니다.")
+        st.error("⚠️ 처음 오신 장비입니다. 최초 1회 등록이 필요합니다.")
         types = db_api.get_equipment_types()
         t_opts = {t['equipment_type']: t['equipment_type_id'] for t in types}
-        n_t = st.selectbox("장비 종류", options=list(t_opts.keys()))
-        n_m = st.text_input("모델명")
-        if st.button("장비 등록 및 점검", use_container_width=True):
+        n_t = st.selectbox("어떤 장비인가요?", options=list(t_opts.keys()))
+        n_m = st.text_input("모델명이 있다면 적어주세요 (선택사항)")
+        
+        st.write("") # 여백
+        if st.button("✅ 장비 등록하고 점검 시작하기", type="primary", use_container_width=True):
             db_api.create_equipment(st.session_state.temp_reg, t_opts[n_t], n_m)
             st.session_state.eq_data = db_api.check_equipment_exists(st.session_state.temp_reg)
-            st.session_state.worker_step = "checklist"; st.rerun()
+            st.session_state.worker_step = "checklist"
+            st.rerun()
 
     elif st.session_state.worker_step == "checklist":
         eq = st.session_state.eq_data
-        st.subheader(f"📋 {eq['equipment_types']['equipment_type']} 점검 중")
-        st.info(f"번호: {st.session_state.temp_reg} / 업체: {st.session_state.temp_p_name}")
+        st.success(f"📋 {st.session_state.temp_reg} ({eq['equipment_types']['equipment_type']}) 점검을 시작합니다.")
         
         items = db_api.get_items_by_type(eq['equipment_type_id'])
         ins_results = []
 
         for it in items:
-            st.write(f"### {it['item_number']}. {it['item_name']}")
+            st.write(f"### 📍 {it['item_number']}. {it['item_name']}")
             
-            # CSS로 완벽히 4색상 블록화된 라디오 버튼
             res = st.radio(
                 "상태", 
                 ["양호", "수리요", "불량", "기타"], 
@@ -276,15 +296,18 @@ else:
             
             note, img_b64 = "", ""
             if res != "양호":
-                st.warning("⚠️ 사진 촬영과 메모가 필요합니다.")
-                cam = st.camera_input("📸 사진 촬영", key=f"cam_{it['item_id']}")
+                st.warning("⚠️ 이상이 발견되었습니다. 현장 사진과 내용을 꼭 남겨주세요.")
+                cam = st.camera_input("📸 여기를 눌러 사진 촬영", key=f"cam_{it['item_id']}")
                 if cam: img_b64 = resize_image_to_base64(cam)
-                note = st.text_area("📝 조치 사항 입력", key=f"n_{it['item_id']}")
+                note = st.text_area("📝 조치 사항 입력란", key=f"n_{it['item_id']}", placeholder="어떤 문제가 있는지 적어주세요.")
             
             ins_results.append({"id": it['item_id'], "res": res, "note": note, "img": img_b64})
             st.divider()
         
-        if st.button("✅ 점검 결과 최종 제출", type="primary", use_container_width=True):
+        st.write("") # 여백
+        if st.button("✅ 오늘 점검 모두 완료하고 제출하기", type="primary", use_container_width=True):
             for r in ins_results:
                 db_api.create_inspection_log(project_code, st.session_state.temp_reg, st.session_state.temp_p_id, r['id'], r['res'], r['note'], r['img'], st.session_state.temp_p_name)
-            st.success("점검 제출 완료!"); st.session_state.worker_step = "input"; st.rerun()
+            st.success("🎉 점검 제출 완료! 오늘도 안전 작업 하십시오.")
+            st.session_state.worker_step = "input"
+            st.rerun()
