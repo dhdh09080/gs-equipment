@@ -12,42 +12,24 @@ st.markdown("""
     /* 배경색 (GS E&C 스타일 밝은 회색) */
     body, .stApp { background-color: #f4f5f7 !important; }
     
-    /* 🔥 1. 입력창 & 드롭다운 글자 잘림 완벽 해결 🔥 */
-    div[data-baseweb="select"] > div, 
-    div[data-baseweb="input"] > div > input {
-        font-size: 18px !important;
-        padding: 12px !important;
-        min-height: 55px !important;
-        line-height: 1.5 !important;
-        border-radius: 8px !important;
-        border: 1px solid #ced4da !important;
+    /* 🔥 1. 입력창 & 셀렉트박스 글자 잘림(Clipping) 완벽 해결 🔥 */
+    /* 높이를 강제하지 않고 글자 크기만 키워 기본 레이아웃 존중 */
+    .stTextInput input, .stSelectbox div[data-baseweb="select"] {
+        font-size: 1.1rem !important;
     }
-    /* 드롭다운 리스트(팝업) 안쪽 글자 크기도 키움 */
-    ul[data-baseweb="menu"] li {
-        font-size: 18px !important;
-        padding: 15px !important;
+    .stTextInput label p, .stSelectbox label p {
+        font-size: 1.1rem !important;
+        font-weight: bold !important;
+        color: #122d43 !important;
     }
 
     /* 2. 관리자 탭 (홈, 일일점검현황, 관리) 및 카드 디자인 */
-    div.stTabs [data-baseweb="tab-list"] {
-        background-color: white;
-        padding: 0;
-        border-bottom: 2px solid #e9ecef;
-    }
-    div.stTabs [data-baseweb="tab"] {
-        font-size: 18px !important;
-        font-weight: bold;
-        padding: 15px 20px;
-    }
+    div.stTabs [data-baseweb="tab-list"] { background-color: white; padding: 0; border-bottom: 2px solid #e9ecef; }
+    div.stTabs [data-baseweb="tab"] { font-size: 18px !important; font-weight: bold; padding: 15px 20px; }
     
-    /* 카드형 컨테이너 스타일 (GS E&C 앱 스타일) */
     .custom-card {
-        background-color: white;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 15px;
-        box-shadow: 0px 2px 5px rgba(0,0,0,0.05);
-        border: 1px solid #e9ecef;
+        background-color: white; border-radius: 12px; padding: 20px;
+        margin-bottom: 15px; box-shadow: 0px 2px 5px rgba(0,0,0,0.05); border: 1px solid #e9ecef;
     }
 
     /* 3. 라디오 버튼 -> 4색상 대형 블록 버튼화 */
@@ -65,16 +47,15 @@ st.markdown("""
     }
 
     /* 버튼 색상 지정 (양호/수리요/불량/기타) */
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(1) { background-color: #78be20 !important; } /* GS Green */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(1) { background-color: #78be20 !important; }
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(1) * { color: white !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(2) { background-color: #f2a900 !important; } /* GS Yellow */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(2) { background-color: #f2a900 !important; }
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(2) * { color: white !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(3) { background-color: #cf4520 !important; } /* GS Red */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(3) { background-color: #cf4520 !important; }
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(3) * { color: white !important; }
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(4) { background-color: #75787b !important; } /* GS Gray */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(4) { background-color: #75787b !important; }
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(4) * { color: white !important; }
 
-    /* 선택 효과 */
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:not(:checked)) { opacity: 0.25 !important; }
     div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:checked) {
         opacity: 1.0 !important; transform: scale(1.02) !important;
@@ -82,14 +63,8 @@ st.markdown("""
     }
 
     /* 4. 엑셀 다운로드 플로팅 버튼 고정 */
-    .floating-excel-btn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 9999;
-    }
+    .floating-excel-btn { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
     
-    /* 모바일 환경 텍스트 크기 일괄 조정 */
     @media (max-width: 768px) {
         html, body, [class*="st-"] { font-size: 16px !important; }
         .stButton button { font-size: 18px !important; padding: 12px !important; }
@@ -151,14 +126,12 @@ with st.sidebar:
 # ==========================================
 if st.session_state.role == "Admin":
     
-    # 상단 날짜 컨트롤러 (화살표 포함)
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     col_l, col_d, col_r = st.columns([1, 4, 1])
     if col_l.button("◀ 이전일", use_container_width=True):
         st.session_state.target_date -= timedelta(days=1)
         st.rerun()
     
-    # 날짜 캘린더 선택
     sel_date = col_d.date_input("조회일자", value=st.session_state.target_date, label_visibility="collapsed")
     if sel_date != st.session_state.target_date:
         st.session_state.target_date = sel_date
@@ -169,40 +142,51 @@ if st.session_state.role == "Admin":
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # 탭 구성: 홈(대시보드), 일일점검현황, 관리
     menu = st.tabs(["🏠 홈 (점검장비 현황)", "📋 일일점검현황", "⚙️ 관리"])
     
-    # 공통 데이터 로드
     date_str = st.session_state.target_date.strftime("%Y-%m-%d")
     stats = db_api.get_daily_stats(date_str)
     logs = db_api.get_daily_logs_summary(date_str)
 
-    with menu[0]: # 1. 홈 (이미지 2 스타일)
-        st.markdown(f"### 점검장비 현황: 총 {sum(s['completed'] for s in stats)}대 완료")
+    # 🌟 수정사항 2 & 3: 홈 화면 장비 리스트 및 비율 표시
+    with menu[0]: 
+        total_completed = sum(s['completed'] for s in stats)
+        total_equipments = sum(s['total'] for s in stats)
+        st.markdown(f"### 📊 전체 점검 진행률: 총 {total_equipments}대 중 {total_completed}대 완료")
+        
         if stats:
             for s in stats:
-                st.markdown(f"""
-                <div class="custom-card" style="display:flex; justify-content:space-between; align-items:center;">
-                    <h2 style="margin:0; color:#122d43;">{s['type']}</h2>
-                    <h1 style="margin:0; color:#122d43;">{s['completed']} <span style="font-size:18px;">대</span></h1>
-                </div>
-                """, unsafe_allow_html=True)
+                # 굴삭기: 5대 중 4대 완료 아코디언 메뉴
+                with st.expander(f"🚜 {s['type']} : 총 {s['total']}대 중 {s['completed']}대 완료"):
+                    col_done, col_pending = st.columns(2)
+                    with col_done:
+                        st.markdown("**✅ 점검 완료**")
+                        if s['completed_list']:
+                            for c in s['completed_list']:
+                                st.write(f"- {c['reg']} ({c['partner']})")
+                        else:
+                            st.write("완료된 장비가 없습니다.")
+                    with col_pending:
+                        st.markdown("**❌ 미점검**")
+                        if s['pending_list']:
+                            for p in s['pending_list']:
+                                st.write(f"- {p['reg']} (미정)")
+                        else:
+                            st.write("모든 장비가 점검을 완료했습니다.")
         else:
             st.info("등록된 장비 데이터가 없습니다.")
 
-    with menu[1]: # 2. 일일점검현황 (이미지 3 스타일)
+    # 🌟 수정사항 1: 일일점검 리스트 중복(반복) 항목 제거
+    with menu[1]: 
         st.markdown("### 일일점검 리스트")
         if logs:
-            # 장비별로 로그 그룹화
             grouped_logs = {}
             for l in logs:
                 reg = l['registration_number']
                 if reg not in grouped_logs:
-                    # 안전한 딕셔너리 접근 방어 로직 (데이터 누락 방지)
                     eq_data = l.get('equipments') or {}
                     eq_type_data = eq_data.get('equipment_types') or {}
                     pt_data = l.get('partners') or {}
-                    
                     grouped_logs[reg] = {
                         "type": eq_type_data.get('equipment_type', '알수없음'),
                         "model": eq_data.get('equipment_model', ''),
@@ -210,27 +194,28 @@ if st.session_state.role == "Admin":
                         "status_counts": {"양호":0, "수리요":0, "불량":0, "기타":0},
                         "details": []
                     }
-                
-                # 🔥 KeyError 방어: 이상한 과거 데이터가 있으면 무조건 '기타'로 취급
                 status_val = l.get('status', '기타')
-                if status_val not in grouped_logs[reg]["status_counts"]:
-                    status_val = "기타"
-                
+                if status_val not in grouped_logs[reg]["status_counts"]: status_val = "기타"
                 grouped_logs[reg]["status_counts"][status_val] += 1
                 grouped_logs[reg]["details"].append(l)
 
-            # 리스트 출력 (클릭 시 펼쳐짐)
             for reg, data in grouped_logs.items():
-                # 요약 상태 동그라미 생성
                 dots = ""
                 if data['status_counts']['불량'] > 0: dots = "🔴 불량발견"
                 elif data['status_counts']['수리요'] > 0: dots = "🟡 수리필요"
                 else: dots = "🟢 전항목 양호"
 
                 with st.expander(f"🚜 {data['partner']} | {data['type']}({data['model']}) | {reg}  ➔ {dots}"):
+                    # 중복 기록 제거 로직 (최신 기록 1개만 남김)
+                    unique_items = {}
                     for d in data['details']:
                         item_data = d.get('inspection_items') or {}
                         item_name = item_data.get('item_name', '알수없음')
+                        if item_name not in unique_items:
+                            unique_items[item_name] = d
+                    
+                    # 중복이 제거된 유니크한 항목들만 출력
+                    for item_name, d in unique_items.items():
                         note = f"({d.get('inspection_note')})" if d.get('inspection_note') else ""
                         st.write(f"- **{item_name}**: {d.get('status', '알수없음')} {note}")
         else:
@@ -240,7 +225,7 @@ if st.session_state.role == "Admin":
         st.markdown("### 시스템 관리")
         admin_tabs = st.tabs(["🏢 업체 관리", "📋 장비/체크리스트 관리", "🛠️ 장비 마스터"])
         
-        with admin_tabs[0]: # 업체
+        with admin_tabs[0]: 
             with st.form("add_partner_form", clear_on_submit=True):
                 new_p = st.text_input("새 업체명 입력 후 Enter")
                 if st.form_submit_button("업체 추가"):
@@ -252,7 +237,7 @@ if st.session_state.role == "Admin":
                 if c2.button("삭제", key=f"p_{p['partner_id']}"):
                     db_api.delete_partner(p['partner_id']); st.rerun()
 
-        with admin_tabs[1]: # 체크리스트/종류 관리
+        with admin_tabs[1]: 
             col_l, col_r = st.columns(2)
             with col_l:
                 st.write("**[장비 종류 관리]**")
@@ -285,7 +270,7 @@ if st.session_state.role == "Admin":
                         if c2.button("제외", key=f"it_{it['item_id']}"):
                             db_api.delete_inspection_item(it['item_id']); st.rerun()
 
-        with admin_tabs[2]: # 장비 마스터 (표 클릭 수정)
+        with admin_tabs[2]: 
             all_eqs = db_api.get_all_equipments()
             df_display = pd.DataFrame([{"번호": eq['registration_number'], "종류": eq['equipment_types']['equipment_type'], "모델": eq['equipment_model'] or "-"} for eq in all_eqs])
             
@@ -320,8 +305,8 @@ if st.session_state.role == "Admin":
     if stats and logs:
         df_stats = pd.DataFrame(stats)
         logs_formatted = []
+        # 중복이 포함된 전체 로그를 시간순으로 엑셀에 담습니다 (감사용)
         for l in logs:
-            # 방어 로직 추가 (결측치에 의한 에러 방지)
             pt_name = l.get("partners", {}).get("partner_name", "") if l.get("partners") else ""
             eq_data = l.get("equipments") or {}
             eq_type_data = eq_data.get("equipment_types") or {}
@@ -351,7 +336,7 @@ if st.session_state.role == "Admin":
         st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# [WORKER] 근로자 점검 화면 (어르신 맞춤형)
+# [WORKER] 근로자 점검 화면 
 # ==========================================
 else:
     st.title("🚜 장비 일일 안전 점검")
@@ -359,14 +344,12 @@ else:
     
     if st.session_state.worker_step == "input":
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        st.subheader("1️⃣ 장비 번호를 입력해주세요")
-        reg = st.text_input("장비 번호 (예: 01가1234)", placeholder="터치하여 입력하세요", label_visibility="collapsed").replace(" ", "")
+        reg = st.text_input("1️⃣ 장비 번호 입력 (예: 01가1234)", placeholder="터치하여 입력하세요").replace(" ", "")
         
         st.write("")
-        st.subheader("2️⃣ 소속 업체를 선택해주세요")
         partners = db_api.get_partners(project_code)
         p_names = [p['partner_name'] for p in partners]
-        sel_p = st.selectbox("업체 목록", options=["여기를 눌러 선택하세요"] + p_names, label_visibility="collapsed")
+        sel_p = st.selectbox("2️⃣ 소속 업체 선택", options=["여기를 눌러 선택하세요"] + p_names)
         
         st.write("") 
         if st.button("🚀 점검 시작하기", type="primary", use_container_width=True):
@@ -408,7 +391,6 @@ else:
     elif st.session_state.worker_step == "checklist":
         eq = st.session_state.eq_data
         
-        # 뒤로가기 버튼과 타이틀
         col1, col2 = st.columns([0.2, 0.8])
         if col1.button("⬅️ 뒤로"):
             st.session_state.worker_step = "input"
