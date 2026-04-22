@@ -81,7 +81,7 @@ st.markdown("""
         box-shadow: 0px 4px 8px rgba(0,0,0,0.2) !important; border: 2px solid #122d43 !important;
     }
 
-    /* 🔥 4. 엑셀 다운로드 플로팅 버튼 고정 🔥 */
+    /* 4. 엑셀 다운로드 플로팅 버튼 고정 */
     .floating-excel-btn {
         position: fixed;
         bottom: 20px;
@@ -198,19 +198,30 @@ if st.session_state.role == "Admin":
             for l in logs:
                 reg = l['registration_number']
                 if reg not in grouped_logs:
+                    # 안전한 딕셔너리 접근 방어 로직 (데이터 누락 방지)
+                    eq_data = l.get('equipments') or {}
+                    eq_type_data = eq_data.get('equipment_types') or {}
+                    pt_data = l.get('partners') or {}
+                    
                     grouped_logs[reg] = {
-                        "type": l['equipments']['equipment_types']['equipment_type'] if l.get('equipments') else "알수없음",
-                        "model": l['equipments']['equipment_model'] if l.get('equipments') else "",
-                        "partner": l['partners']['partner_name'] if l.get('partners') else "",
+                        "type": eq_type_data.get('equipment_type', '알수없음'),
+                        "model": eq_data.get('equipment_model', ''),
+                        "partner": pt_data.get('partner_name', '알수없음'),
                         "status_counts": {"양호":0, "수리요":0, "불량":0, "기타":0},
                         "details": []
                     }
-                grouped_logs[reg]["status_counts"][l['status']] += 1
+                
+                # 🔥 KeyError 방어: 이상한 과거 데이터가 있으면 무조건 '기타'로 취급
+                status_val = l.get('status', '기타')
+                if status_val not in grouped_logs[reg]["status_counts"]:
+                    status_val = "기타"
+                
+                grouped_logs[reg]["status_counts"][status_val] += 1
                 grouped_logs[reg]["details"].append(l)
 
             # 리스트 출력 (클릭 시 펼쳐짐)
             for reg, data in grouped_logs.items():
-                # 요약 상태 동그라미 생성 (양호:초록, 수리요:노랑, 불량:빨강)
+                # 요약 상태 동그라미 생성
                 dots = ""
                 if data['status_counts']['불량'] > 0: dots = "🔴 불량발견"
                 elif data['status_counts']['수리요'] > 0: dots = "🟡 수리필요"
@@ -218,8 +229,10 @@ if st.session_state.role == "Admin":
 
                 with st.expander(f"🚜 {data['partner']} | {data['type']}({data['model']}) | {reg}  ➔ {dots}"):
                     for d in data['details']:
-                        item_name = d['inspection_items']['item_name'] if d.get('inspection_items') else "알수없음"
-                        st.write(f"- **{item_name}**: {d['status']} {f'({d.get('inspection_note')})' if d.get('inspection_note') else ''}")
+                        item_data = d.get('inspection_items') or {}
+                        item_name = item_data.get('item_name', '알수없음')
+                        note = f"({d.get('inspection_note')})" if d.get('inspection_note') else ""
+                        st.write(f"- **{item_name}**: {d.get('status', '알수없음')} {note}")
         else:
             st.info("해당 날짜에 점검된 기록이 없습니다.")
 
@@ -308,18 +321,25 @@ if st.session_state.role == "Admin":
         df_stats = pd.DataFrame(stats)
         logs_formatted = []
         for l in logs:
+            # 방어 로직 추가 (결측치에 의한 에러 방지)
+            pt_name = l.get("partners", {}).get("partner_name", "") if l.get("partners") else ""
+            eq_data = l.get("equipments") or {}
+            eq_type_data = eq_data.get("equipment_types") or {}
+            eq_name = eq_type_data.get("equipment_type", "")
+            item_data = l.get("inspection_items") or {}
+            item_name = item_data.get("item_name", "")
+            
             logs_formatted.append({
                 "점검시간": l.get("created_at", "")[:16].replace("T", " "),
                 "장비번호": l.get("registration_number", ""),
-                "점검업체": l.get("partners", {}).get("partner_name", "") if l.get("partners") else "",
-                "장비종류": l.get("equipments", {}).get("equipment_types", {}).get("equipment_type", "") if l.get("equipments") else "",
-                "점검항목": l.get("inspection_items", {}).get("item_name", "") if l.get("inspection_items") else "",
+                "점검업체": pt_name,
+                "장비종류": eq_name,
+                "점검항목": item_name,
                 "상태": l.get("status", ""),
                 "비고": l.get("inspection_note", "")
             })
         df_logs = pd.DataFrame(logs_formatted)
         
-        # 다운로드 버튼을 빈 컨테이너에 넣고 CSS 클래스로 우측 하단 고정
         st.markdown('<div class="floating-excel-btn">', unsafe_allow_html=True)
         st.download_button(
             label="📥 점검결과 Excel 다운로드",
@@ -334,8 +354,6 @@ if st.session_state.role == "Admin":
 # [WORKER] 근로자 점검 화면 (어르신 맞춤형)
 # ==========================================
 else:
-    # 헤더 이미지 (선택 사항)
-    # st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/GS_E%26C_logo.svg/512px-GS_E%26C_logo.svg.png", width=150)
     st.title("🚜 장비 일일 안전 점검")
     st.write("---")
     
