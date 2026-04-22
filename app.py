@@ -15,9 +15,7 @@ st.markdown("""
         font-size: 1.1rem !important;
     }
     .stTextInput label p, .stSelectbox label p {
-        font-size: 1.1rem !important;
-        font-weight: bold !important;
-        color: #122d43 !important;
+        font-size: 1.1rem !important; font-weight: bold !important; color: #122d43 !important;
     }
 
     div.stTabs [data-baseweb="tab-list"] { background-color: white; padding: 0; border-bottom: 2px solid #e9ecef; }
@@ -167,7 +165,6 @@ if st.session_state.role == "Admin":
                         else: st.write("모두 완료")
         else: st.info("데이터가 없습니다.")
 
-    # 🔥 수정: 일일점검 리스트 개별 수정/삭제 기능 추가 🔥
     with menu[1]: 
         st.markdown("### 일일점검 리스트 수정 및 확인")
         if logs:
@@ -202,44 +199,48 @@ if st.session_state.role == "Admin":
                         item_name = (d.get('inspection_items') or {}).get('item_name', '알수없음')
                         if item_name not in unique_items: unique_items[item_name] = d
                     
-                    # 각 항목별 수정/삭제 UI 생성
                     for item_name, d in unique_items.items():
-                        log_id = d.get('id')
+                        # 🔥 에러 해결: id 대신 안전한 조합키를 생성합니다.
+                        log_created_at = d.get('created_at')
+                        log_item_id = d.get('item_id')
                         
-                        # 수정 모드일 때 (입력창으로 변환)
-                        if st.session_state.get(f"edit_log_{log_id}", False):
-                            st.write(f"**{item_name}**")
-                            # 상태 선택 박스
-                            status_options = ["양호", "수리요", "불량", "기타"]
-                            current_idx = status_options.index(d.get('status', '기타')) if d.get('status') in status_options else 3
-                            new_status = st.selectbox("상태 수정", status_options, index=current_idx, key=f"sel_{log_id}")
-                            new_note = st.text_input("비고 수정", value=d.get('inspection_note') or "", key=f"note_{log_id}")
+                        if log_created_at and log_item_id:
+                            # 세션 키에서 특수문자로 인한 오류를 막기 위해 변환
+                            safe_key = f"{reg}_{log_item_id}_{log_created_at.replace(':', '').replace('-', '')}"
                             
-                            c_save, c_cancel = st.columns(2)
-                            if c_save.button("💾 저장", type="primary", key=f"save_{log_id}"):
-                                db_api.update_inspection_log(log_id, new_status, new_note)
-                                st.session_state[f"edit_log_{log_id}"] = False
-                                st.rerun()
-                            if c_cancel.button("취소", key=f"cancel_{log_id}"):
-                                st.session_state[f"edit_log_{log_id}"] = False
-                                st.rerun()
-                            st.write("---")
+                            if st.session_state.get(f"edit_log_{safe_key}", False):
+                                st.write(f"**{item_name}**")
+                                status_options = ["양호", "수리요", "불량", "기타"]
+                                current_idx = status_options.index(d.get('status', '기타')) if d.get('status') in status_options else 3
+                                new_status = st.selectbox("상태 수정", status_options, index=current_idx, key=f"sel_{safe_key}")
+                                new_note = st.text_input("비고 수정", value=d.get('inspection_note') or "", key=f"note_{safe_key}")
                                 
-                        # 일반 보기 모드일 때 (텍스트와 버튼)
-                        else:
-                            c_text, c_edit, c_del = st.columns([0.7, 0.15, 0.15])
-                            note = f"({d.get('inspection_note')})" if d.get('inspection_note') else ""
-                            c_text.write(f"- **{item_name}**: {d.get('status', '알수없음')} {note}")
-                            
-                            # log_id가 있는 정상적인 데이터만 수정/삭제 버튼 활성화
-                            if log_id:
-                                if c_edit.button("✏️ 수정", key=f"btn_edit_{log_id}", use_container_width=True):
-                                    st.session_state[f"edit_log_{log_id}"] = True
+                                c_save, c_cancel = st.columns(2)
+                                if c_save.button("💾 저장", type="primary", key=f"save_{safe_key}"):
+                                    db_api.update_inspection_log(reg, log_item_id, log_created_at, new_status, new_note)
+                                    st.session_state[f"edit_log_{safe_key}"] = False
                                     st.rerun()
-                                if c_del.button("🗑️ 삭제", key=f"btn_del_{log_id}", use_container_width=True):
-                                    db_api.delete_inspection_log(log_id)
+                                if c_cancel.button("취소", key=f"cancel_{safe_key}"):
+                                    st.session_state[f"edit_log_{safe_key}"] = False
+                                    st.rerun()
+                                st.write("---")
+                                    
+                            else:
+                                c_text, c_edit, c_del = st.columns([0.7, 0.15, 0.15])
+                                note = f"({d.get('inspection_note')})" if d.get('inspection_note') else ""
+                                c_text.write(f"- **{item_name}**: {d.get('status', '알수없음')} {note}")
+                                
+                                if c_edit.button("✏️ 수정", key=f"btn_edit_{safe_key}", use_container_width=True):
+                                    st.session_state[f"edit_log_{safe_key}"] = True
+                                    st.rerun()
+                                if c_del.button("🗑️ 삭제", key=f"btn_del_{safe_key}", use_container_width=True):
+                                    db_api.delete_inspection_log(reg, log_item_id, log_created_at)
                                     st.toast("삭제되었습니다.")
                                     st.rerun()
+                        else:
+                            # 만약 키 데이터가 없는 옛날 데이터라면 텍스트만 보여줌
+                            note = f"({d.get('inspection_note')})" if d.get('inspection_note') else ""
+                            st.write(f"- **{item_name}**: {d.get('status', '알수없음')} {note}")
         else: st.info("기록이 없습니다.")
 
     with menu[2]: 
