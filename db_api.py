@@ -31,24 +31,31 @@ def get_daily_stats(target_date):
         stats.append({"type": t['equipment_type'], "total": len(type_eqs), "completed": done})
     return stats
 
+def get_daily_logs_for_excel(target_date):
+    """엑셀 다운로드용 상세 점검 결과 조회"""
+    res = supabase.table("inspection_logs") \
+        .select("created_at, registration_number, inspector, status, inspection_note, partners(partner_name), inspection_items(item_name)") \
+        .filter("created_at", "gte", f"{target_date}T00:00:00") \
+        .filter("created_at", "lte", f"{target_date}T23:59:59") \
+        .execute()
+    return res.data
+
 def get_all_equipments():
     return supabase.table("equipments").select("*, equipment_types(equipment_type)").execute().data
 
 def update_equipment(original_reg, new_reg, type_id, model):
-    """장비 정보 수정"""
     data = {"registration_number": new_reg, "equipment_type_id": type_id, "equipment_model": model}
     return supabase.table("equipments").update(data).eq("registration_number", original_reg).execute()
 
 def delete_equipment(reg_number):
-    """장비 삭제"""
     try:
         supabase.table("equipments").delete().eq("registration_number", reg_number).execute()
         return True, "삭제 성공"
     except Exception as e:
-        return False, "점검 기록이 있는 장비는 삭제할 수 없습니다. (데이터 보호)"
+        return False, "점검 기록이 남아있는 장비는 삭제할 수 없습니다. (데이터 보호)"
 
 # ==========================================
-# [2] 업체(Partner) 관리
+# [2] 업체 관리
 # ==========================================
 def get_partners(project_code):
     return supabase.table("partners").select("*").eq("project_code", project_code).execute().data
@@ -60,10 +67,20 @@ def delete_partner(partner_id):
     return supabase.table("partners").delete().eq("partner_id", partner_id).execute()
 
 # ==========================================
-# [3] 체크리스트 관리
+# [3] 체크리스트 & 장비 종류 관리
 # ==========================================
 def get_equipment_types():
-    return supabase.table("equipment_types").select("*").execute().data
+    return supabase.table("equipment_types").select("*").order("equipment_type_id").execute().data
+
+def add_equipment_type(type_name):
+    return supabase.table("equipment_types").insert({"equipment_type": type_name}).execute()
+
+def delete_equipment_type(type_id):
+    try:
+        supabase.table("equipment_types").delete().eq("equipment_type_id", type_id).execute()
+        return True, "장비 종류가 삭제되었습니다."
+    except Exception as e:
+        return False, "이 장비 종류에 속한 장비나 항목이 있어 삭제가 불가능합니다."
 
 def get_items_by_type(type_id):
     return supabase.table("inspection_items").select("*").eq("equipment_type_id", type_id).eq("is_active", True).order("item_number").execute().data
