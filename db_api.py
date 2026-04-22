@@ -58,9 +58,9 @@ def get_daily_stats(target_date):
     return stats
 
 def get_daily_logs_summary(target_date):
-    # 🔥 수정: 개별 항목을 식별하기 위해 'id' 컬럼을 함께 불러옵니다.
+    # 🔥 에러 해결: id 컬럼 대신 item_id를 불러와서 식별자로 사용합니다.
     res = supabase.table("inspection_logs") \
-        .select("id, created_at, registration_number, inspector, status, inspection_note, partners(partner_name), equipments(equipment_types(equipment_type), equipment_model), inspection_items(item_name)") \
+        .select("created_at, registration_number, item_id, inspector, status, inspection_note, partners(partner_name), equipments(equipment_types(equipment_type), equipment_model), inspection_items(item_name)") \
         .filter("created_at", "gte", f"{target_date}T00:00:00") \
         .filter("created_at", "lte", f"{target_date}T23:59:59") \
         .order("created_at", desc=True) \
@@ -70,18 +70,26 @@ def get_daily_logs_summary(target_date):
 def get_daily_logs_for_excel(target_date):
     return get_daily_logs_summary(target_date)
 
-# 🔥 신규: 점검 기록 개별 수정/삭제 함수
-def update_inspection_log(log_id, new_status, new_note):
-    """점검 기록의 상태와 비고를 수정합니다."""
+# 🔥 에러 해결: id 대신 [장비번호 + 항목ID + 생성시간]의 조합으로 정확한 데이터를 찾아 수정/삭제합니다.
+def update_inspection_log(reg_number, item_id, created_at, new_status, new_note):
     data = {"status": new_status, "inspection_note": new_note}
-    return supabase.table("inspection_logs").update(data).eq("id", log_id).execute()
+    return supabase.table("inspection_logs") \
+        .update(data) \
+        .eq("registration_number", reg_number) \
+        .eq("item_id", item_id) \
+        .eq("created_at", created_at) \
+        .execute()
 
-def delete_inspection_log(log_id):
-    """점검 기록을 삭제합니다."""
-    return supabase.table("inspection_logs").delete().eq("id", log_id).execute()
+def delete_inspection_log(reg_number, item_id, created_at):
+    return supabase.table("inspection_logs") \
+        .delete() \
+        .eq("registration_number", reg_number) \
+        .eq("item_id", item_id) \
+        .eq("created_at", created_at) \
+        .execute()
 
 # ==========================================
-# [기타 유지 코드들 (장비/업체 관리 등)]
+# [기타 유지 코드들]
 # ==========================================
 def get_all_equipments():
     return supabase.table("equipments").select("*, equipment_types(equipment_type)").execute().data
