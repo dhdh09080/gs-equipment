@@ -1,4 +1,35 @@
-# ... (앞선 설정 및 로그인 로직 동일)
+import streamlit as st
+import db_api
+
+st.set_page_config(page_title="GS E&C 안전관리 시스템", layout="wide")
+
+# --- 세션 상태 ---
+if "logged_in" not in st.session_state: st.session_state.logged_in = False
+if "role" not in st.session_state: st.session_state.role = "Worker"
+if "worker_step" not in st.session_state: st.session_state.worker_step = "input"
+
+# URL에서 프로젝트 코드 추출 (기본값 설정)
+project_code = st.query_params.get("projectCode", "GS_PROJECT_001")
+
+# --- 사이드바 로그인 ---
+with st.sidebar:
+    st.title("🛡️ 안전시스템")
+    if not st.session_state.logged_in:
+        with st.expander("🔐 관리자 로그인"):
+            admin_id = st.text_input("ID", value="gsmaster")
+            admin_pw = st.text_input("PW", type="password", value="1234")
+            if st.button("로그인"):
+                if admin_id == "gsmaster" and admin_pw == "1234":
+                    st.session_state.logged_in = True
+                    st.session_state.role = "Admin"
+                    st.rerun()
+                else: st.error("정보가 일치하지 않습니다.")
+    else:
+        st.write(f"✅ **{st.session_state.role} 모드**")
+        if st.button("로그아웃"):
+            st.session_state.logged_in = False
+            st.session_state.role = "Worker"
+            st.rerun()
 
 if st.session_state.role == "Admin":
     menu = st.tabs(["📊 일일 이행 현황", "🏢 업체 관리", "📋 체크리스트", "🚜 장비 마스터"])
