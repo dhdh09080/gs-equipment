@@ -31,8 +31,7 @@ st.markdown("""
         margin-bottom: 15px; box-shadow: 0px 2px 5px rgba(0,0,0,0.05); border: 1px solid #e9ecef;
     }
 
-    /* 🔥 3. 라디오 버튼 -> 가로 100% 꽉 채우는 4색상 블록 버튼화 🔥 */
-    /* 부모 컨테이너들도 무조건 100% 너비를 가지도록 강제 */
+    /* 3. 라디오 버튼 -> 가로 100% 꽉 채우는 4색상 블록 버튼화 */
     div[data-testid="stRadio"], 
     div[data-testid="stRadio"] > div {
         width: 100% !important;
@@ -46,7 +45,6 @@ st.markdown("""
         justify-content: space-between !important;
     }
     
-    /* 각 옵션 박스가 정확히 1/n 비율로 확장되도록 설정 (flex: 1 1 0px) */
     div[data-testid="stRadio"] div[role="radiogroup"] > label {
         flex: 1 1 0px !important; 
         width: 100% !important;
@@ -63,7 +61,6 @@ st.markdown("""
     
     div[data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child { display: none !important; }
     
-    /* 글자 줄바꿈(수리/요) 절대 금지 */
     div[data-testid="stRadio"] div[role="radiogroup"] > label p {
         margin: 0 !important; padding: 0 !important; 
         font-weight: 900 !important; font-size: 18px !important;
@@ -72,13 +69,9 @@ st.markdown("""
 
     /* 버튼 색상 지정 */
     div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(1) { background-color: #78be20 !important; }
-    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(1) * { color: white !important; }
     div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(2) { background-color: #f2a900 !important; }
-    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(2) * { color: white !important; }
     div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(3) { background-color: #cf4520 !important; }
-    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(3) * { color: white !important; }
     div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(4) { background-color: #75787b !important; }
-    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(4) * { color: white !important; }
 
     div[data-testid="stRadio"] div[role="radiogroup"] > label:has(input:not(:checked)) { opacity: 0.25 !important; }
     div[data-testid="stRadio"] div[role="radiogroup"] > label:has(input:checked) {
@@ -124,14 +117,21 @@ def to_excel(df_stats, df_logs):
         df_logs.to_excel(writer, index=False, sheet_name='점검 상세 내역')
     return output.getvalue()
 
-# --- 사이드바 ---
+# --- 사이드바 (로고 파일 반영) ---
 with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/GS_E%26C_logo.svg/512px-GS_E%26C_logo.svg.png", width=150)
+    # 🌟 깃허브에 올리신 GS_logo.png 파일을 불러옵니다.
+    try:
+        st.image("GS_logo.png", width=200)
+    except:
+        # 파일이 없을 경우를 대비한 대체 로고 (필요 시 수정 가능)
+        st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/GS_E%26C_logo.svg/512px-GS_E%26C_logo.svg.png", width=150)
+    
     st.title("⚙️ 관리자 로그인")
+    
     if not st.session_state.logged_in:
         with st.form("login_form"):
-            admin_id = st.text_input("ID", value="gsmaster")
-            admin_pw = st.text_input("PW", type="password", value="1234")
+            admin_id = st.text_input("아이디", value="gsmaster")
+            admin_pw = st.text_input("비밀번호", type="password", value="1234")
             if st.form_submit_button("로그인", use_container_width=True):
                 if admin_id == "gsmaster" and admin_pw == "1234":
                     st.session_state.logged_in = True
@@ -172,7 +172,6 @@ if st.session_state.role == "Admin":
     stats = db_api.get_daily_stats(date_str)
     logs = db_api.get_daily_logs_summary(date_str)
 
-    # 🌟 수정사항 2 & 3: 점검 장비 현황 1/2 형식으로 깔끔하게 표시
     with menu[0]: 
         total_completed = sum(s['completed'] for s in stats)
         total_equipments = sum(s['total'] for s in stats)
@@ -180,7 +179,6 @@ if st.session_state.role == "Admin":
         
         if stats:
             for s in stats:
-                # 굴삭기 1/2 형식으로 아코디언 메뉴 이름 변경
                 with st.expander(f"🚜 {s['type']} {s['completed']}/{s['total']}"):
                     col_done, col_pending = st.columns(2)
                     with col_done:
@@ -188,17 +186,15 @@ if st.session_state.role == "Admin":
                         if s['completed_list']:
                             for c in s['completed_list']:
                                 st.write(f"- {c['reg']} ({c['partner']})")
-                        else:
-                            st.write("완료된 장비가 없습니다.")
+                        else: st.write("없음")
                     with col_pending:
                         st.markdown("**❌ 미점검**")
                         if s['pending_list']:
                             for p in s['pending_list']:
-                                st.write(f"- {p['reg']} (미정)")
-                        else:
-                            st.write("모든 장비가 점검을 완료했습니다.")
+                                st.write(f"- {p['reg']}")
+                        else: st.write("모두 완료")
         else:
-            st.info("등록된 장비 데이터가 없습니다.")
+            st.info("데이터가 없습니다.")
 
     with menu[1]: 
         st.markdown("### 일일점검 리스트")
@@ -231,16 +227,13 @@ if st.session_state.role == "Admin":
                 with st.expander(f"🚜 {data['partner']} | {data['type']}({data['model']}) | {reg}  ➔ {dots}"):
                     unique_items = {}
                     for d in data['details']:
-                        item_data = d.get('inspection_items') or {}
-                        item_name = item_data.get('item_name', '알수없음')
-                        if item_name not in unique_items:
-                            unique_items[item_name] = d
+                        item_name = (d.get('inspection_items') or {}).get('item_name', '알수없음')
+                        if item_name not in unique_items: unique_items[item_name] = d
                     
                     for item_name, d in unique_items.items():
                         note = f"({d.get('inspection_note')})" if d.get('inspection_note') else ""
                         st.write(f"- **{item_name}**: {d.get('status', '알수없음')} {note}")
-        else:
-            st.info("해당 날짜에 점검된 기록이 없습니다.")
+        else: st.info("기록이 없습니다.")
 
     with menu[2]: 
         st.markdown("### 시스템 관리")
@@ -294,60 +287,43 @@ if st.session_state.role == "Admin":
         with admin_tabs[2]: 
             all_eqs = db_api.get_all_equipments()
             df_display = pd.DataFrame([{"번호": eq['registration_number'], "종류": eq['equipment_types']['equipment_type'], "모델": eq['equipment_model'] or "-"} for eq in all_eqs])
-            
-            st.write("👇 **표에서 장비를 클릭하면 수정/삭제할 수 있습니다.**")
             event = st.dataframe(df_display, use_container_width=True, hide_index=True, selection_mode="single-row", on_select="rerun")
             
             if event.selection.rows:
                 selected_idx = event.selection.rows[0]
                 selected_reg = df_display.iloc[selected_idx]['번호']
                 target_data = next(eq for eq in all_eqs if eq['registration_number'] == selected_reg)
-                
-                st.markdown(f'<div class="custom-card">', unsafe_allow_html=True)
-                st.subheader(f"✏️ [{selected_reg}] 수정")
                 with st.form("edit_eq_form"):
                     new_reg = st.text_input("장비 번호", value=target_data['registration_number'])
-                    type_names = list(t_map.keys())
+                    type_names = [t['equipment_type'] for t in types]
                     current_type = target_data['equipment_types']['equipment_type']
                     new_type = st.selectbox("장비 종류", options=type_names, index=type_names.index(current_type) if current_type in type_names else 0)
                     new_model = st.text_input("모델명", value=target_data['equipment_model'] or "")
-                    
                     c1, c2 = st.columns(2)
                     if c1.form_submit_button("💾 정보 저장", type="primary", use_container_width=True):
-                        db_api.update_equipment(selected_reg, new_reg, t_map[new_type], new_model)
-                        st.success("수정 완료!"); st.rerun()
+                        db_api.update_equipment(selected_reg, new_reg, t_map[new_type], new_model); st.rerun()
                     if c2.form_submit_button("🗑️ 장비 삭제", use_container_width=True):
                         success, msg = db_api.delete_equipment(selected_reg)
                         if success: st.rerun()
                         else: st.error(msg)
-                st.markdown('</div>', unsafe_allow_html=True)
 
     if stats and logs:
         df_stats = pd.DataFrame(stats)
         logs_formatted = []
         for l in logs:
-            pt_name = l.get("partners", {}).get("partner_name", "") if l.get("partners") else ""
-            eq_data = l.get("equipments") or {}
-            eq_type_data = eq_data.get("equipment_types") or {}
-            eq_name = eq_type_data.get("equipment_type", "")
-            item_data = l.get("inspection_items") or {}
-            item_name = item_data.get("item_name", "")
-            
             logs_formatted.append({
                 "점검시간": l.get("created_at", "")[:16].replace("T", " "),
                 "장비번호": l.get("registration_number", ""),
-                "점검업체": pt_name,
-                "장비종류": eq_name,
-                "점검항목": item_name,
+                "점검업체": (l.get("partners") or {}).get("partner_name", ""),
+                "장비종류": ((l.get("equipments") or {}).get("equipment_types") or {}).get("equipment_type", ""),
+                "점검항목": (l.get("inspection_items") or {}).get("item_name", ""),
                 "상태": l.get("status", ""),
                 "비고": l.get("inspection_note", "")
             })
-        df_logs = pd.DataFrame(logs_formatted)
-        
         st.markdown('<div class="floating-excel-btn">', unsafe_allow_html=True)
         st.download_button(
-            label="📥 점검결과 Excel 다운로드",
-            data=to_excel(df_stats, df_logs),
+            label="📥 Excel 다운로드",
+            data=to_excel(df_stats, pd.DataFrame(logs_formatted)),
             file_name=f"안전점검결과_{date_str}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             type="primary"
@@ -363,93 +339,63 @@ else:
     
     if st.session_state.worker_step == "input":
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        reg = st.text_input("1️⃣ 장비 번호 입력 (예: 01가1234)", placeholder="터치하여 입력하세요", label_visibility="collapsed").replace(" ", "")
-        
-        st.write("")
+        reg = st.text_input("1️⃣ 장비 번호 입력 (예: 01가1234)", placeholder="터치하여 입력하세요").replace(" ", "")
         partners = db_api.get_partners(project_code)
         p_names = [p['partner_name'] for p in partners]
-        sel_p = st.selectbox("2️⃣ 소속 업체 선택", options=["여기를 눌러 선택하세요"] + p_names, label_visibility="collapsed")
-        
-        st.write("") 
+        sel_p = st.selectbox("2️⃣ 소속 업체 선택", options=["여기를 눌러 선택하세요"] + p_names)
         if st.button("🚀 점검 시작하기", type="primary", use_container_width=True):
             if reg and sel_p != "여기를 눌러 선택하세요":
                 eq = db_api.check_equipment_exists(reg)
                 st.session_state.temp_reg = reg
                 st.session_state.temp_p_id = next(p['partner_id'] for p in partners if p['partner_name'] == sel_p)
                 st.session_state.temp_p_name = sel_p
-                if eq:
-                    st.session_state.eq_data = eq
-                    st.session_state.worker_step = "checklist"
-                else: 
-                    st.session_state.worker_step = "register"
+                if eq: st.session_state.eq_data = eq; st.session_state.worker_step = "checklist"
+                else: st.session_state.worker_step = "register"
                 st.rerun()
-            else: 
-                st.error("⚠️ 장비 번호와 업체를 모두 확인해주세요.")
+            else: st.error("⚠️ 번호와 업체를 확인해주세요.")
         st.markdown('</div>', unsafe_allow_html=True)
 
     elif st.session_state.worker_step == "register":
-        st.error("⚠️ 처음 오신 장비입니다. 최초 1회 등록이 필요합니다.")
+        st.error("⚠️ 등록이 필요한 장비입니다.")
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         types = db_api.get_equipment_types()
         t_opts = {t['equipment_type']: t['equipment_type_id'] for t in types}
-        n_t = st.selectbox("어떤 장비인가요?", options=list(t_opts.keys()))
-        n_m = st.text_input("모델명이 있다면 적어주세요 (선택)")
-        
-        st.write("") 
+        n_t = st.selectbox("장비 종류", options=list(t_opts.keys()))
+        n_m = st.text_input("모델명 (선택)")
         col1, col2 = st.columns([0.3, 0.7])
-        if col1.button("⬅️ 뒤로", use_container_width=True):
-            st.session_state.worker_step = "input"
-            st.rerun()
-        if col2.button("✅ 장비 등록 및 점검 시작", type="primary", use_container_width=True):
+        if col1.button("⬅️ 뒤로", use_container_width=True): st.session_state.worker_step = "input"; st.rerun()
+        if col2.button("✅ 등록 및 점검 시작", type="primary", use_container_width=True):
             db_api.create_equipment(st.session_state.temp_reg, t_opts[n_t], n_m)
             st.session_state.eq_data = db_api.check_equipment_exists(st.session_state.temp_reg)
-            st.session_state.worker_step = "checklist"
-            st.rerun()
+            st.session_state.worker_step = "checklist"; st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
     elif st.session_state.worker_step == "checklist":
         eq = st.session_state.eq_data
-        
         col1, col2 = st.columns([0.2, 0.8])
-        if col1.button("⬅️ 뒤로"):
-            st.session_state.worker_step = "input"
-            st.rerun()
+        if col1.button("⬅️ 뒤로"): st.session_state.worker_step = "input"; st.rerun()
         col2.success(f"📋 {st.session_state.temp_reg} ({eq['equipment_types']['equipment_type']}) 점검표")
-            
         items = db_api.get_items_by_type(eq['equipment_type_id'])
         ins_results = []
-
         for it in items:
             st.markdown('<div class="custom-card">', unsafe_allow_html=True)
             st.write(f"### {it['item_number']}. {it['item_name']}")
             res = st.radio("상태", ["양호", "수리요", "불량", "기타"], key=f"r_{it['item_id']}", horizontal=True, label_visibility="collapsed")
-            
             note, img_b64 = "", ""
             if res != "양호":
                 st.warning("⚠️ 이상 발견: 사진과 내용을 남겨주세요.")
-                cam = st.camera_input("📸 여기를 눌러 사진 촬영", key=f"cam_{it['item_id']}")
+                cam = st.camera_input("📸 사진 촬영", key=f"cam_{it['item_id']}")
                 if cam: img_b64 = resize_image_to_base64(cam)
-                note = st.text_area("📝 조치 사항", key=f"n_{it['item_id']}", placeholder="어떤 문제가 있는지 적어주세요.")
-            
+                note = st.text_area("📝 조치 사항", key=f"n_{it['item_id']}", placeholder="내용을 입력하세요.")
             ins_results.append({"id": it['item_id'], "res": res, "note": note, "img": img_b64})
             st.markdown('</div>', unsafe_allow_html=True)
-        
-        st.write("")
-        if st.button("✅ 오늘 점검 모두 완료하고 제출하기", type="primary", use_container_width=True):
+        if st.button("✅ 점검 최종 제출", type="primary", use_container_width=True):
             for r in ins_results:
                 db_api.create_inspection_log(project_code, st.session_state.temp_reg, st.session_state.temp_p_id, r['id'], r['res'], r['note'], r['img'], st.session_state.temp_p_name)
-            st.session_state.worker_step = "complete"
-            st.rerun()
+            st.session_state.worker_step = "complete"; st.rerun()
 
     elif st.session_state.worker_step == "complete":
         st.markdown('<div class="custom-card" style="text-align:center; padding: 40px 20px;">', unsafe_allow_html=True)
-        st.markdown("<h1 style='font-size: 50px;'>🎉</h1>", unsafe_allow_html=True)
-        st.markdown("<h2>점검이 완료되었습니다.</h2>", unsafe_allow_html=True)
-        st.info("오늘도 현장의 안전을 지켜주셔서 감사합니다.")
-        
-        st.write("")
-        st.write("")
-        if st.button("🔄 추가 장비 점검하기", type="primary", use_container_width=True):
-            st.session_state.worker_step = "input"
-            st.rerun()
+        st.markdown("<h1 style='font-size: 50px;'>🎉</h1><h2>점검이 완료되었습니다.</h2>", unsafe_allow_html=True)
+        if st.button("🔄 추가 점검하기", type="primary", use_container_width=True): st.session_state.worker_step = "input"; st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
