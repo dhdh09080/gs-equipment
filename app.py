@@ -5,10 +5,10 @@ from io import BytesIO
 from PIL import Image
 from datetime import datetime
 
-# --- [UI] 모바일 최적화 및 반응형 CSS 주입 ---
+# --- [UI] 모바일 최적화 및 대형 네모 버튼 CSS 주입 ---
 st.markdown("""
     <style>
-    /* 1. 버튼 내 글자 세로로 깨짐 방지 및 정렬 */
+    /* 1. 기본 버튼 및 텍스트 줄바꿈 설정 */
     .stButton button {
         white-space: nowrap !important;
         word-break: keep-all !important;
@@ -17,20 +17,53 @@ st.markdown("""
         padding: 0.5rem 1rem !important;
         width: 100% !important;
     }
-
-    /* 2. 텍스트 가독성 향상 */
     div[data-testid="stMarkdownContainer"] p {
         word-break: keep-all !important;
+    }
+
+    /* 🌟 2. 라디오 버튼을 대형 네모 블록 버튼으로 변환 🌟 */
+    div[data-testid="stRadio"] > div {
+        display: flex;
+        gap: 8px; /* 버튼 사이 간격 */
+        flex-wrap: wrap; /* 화면이 좁으면 밑으로 내려감 */
+    }
+    div[data-testid="stRadio"] label {
+        background-color: #f1f3f5; /* 기본 회색 배경 */
+        border: 2px solid #dee2e6 !important;
+        border-radius: 12px !important; /* 둥근 네모 */
+        padding: 18px 5px !important; /* 터치 영역 넉넉하게 위아래 패딩 */
+        flex: 1; /* 버튼들이 가로 길이를 똑같이 나눠 가짐 */
+        min-width: 70px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    /* 기본 동그라미 아이콘 숨기기 */
+    div[data-testid="stRadio"] label > div:first-child {
+        display: none !important;
+    }
+    /* 버튼이 선택되었을 때의 스타일 (배경색, 테두리 강조) */
+    div[data-testid="stRadio"] label:has(input:checked) {
+        background-color: #e3f2fd;
+        border-color: #339af0 !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    /* 선택된 버튼의 글자 굵게 */
+    div[data-testid="stRadio"] label:has(input:checked) p {
+        color: #1864ab !important;
+        font-weight: 900 !important;
     }
 
     /* 3. 모바일 화면 최적화 (가로 768px 이하) */
     @media (max-width: 768px) {
         html, body, [class*="st-"] { font-size: 16px !important; }
-        .stButton button { font-size: 14px !important; padding: 0.3rem 0.2rem !important; }
+        .stButton button { font-size: 16px !important; padding: 0.5rem 0.2rem !important; }
         h1 { font-size: 26px !important; }
         h2 { font-size: 22px !important; }
         h3 { font-size: 18px !important; }
-        div[data-baseweb="radio"] label { font-size: 18px !important; font-weight: bold !important; }
+        div[data-testid="stRadio"] label p { font-size: 16px !important; font-weight: bold !important; margin: 0 !important; }
     }
 
     /* 4. 데스크탑 화면 (가로 768px 초과) */
@@ -40,7 +73,7 @@ st.markdown("""
         h1 { font-size: 36px !important; }
         h2 { font-size: 28px !important; }
         h3 { font-size: 24px !important; }
-        div[data-baseweb="radio"] label { font-size: 22px !important; font-weight: bold !important; }
+        div[data-testid="stRadio"] label p { font-size: 20px !important; font-weight: bold !important; margin: 0 !important; }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -111,7 +144,7 @@ if st.session_state.role == "Admin":
         
         partners = db_api.get_partners(project_code)
         for p in partners:
-            c1, c2 = st.columns([0.7, 0.3]) # 비율 조정
+            c1, c2 = st.columns([0.7, 0.3])
             c1.write(f"• {p['partner_name']}")
             if c2.button("삭제", key=f"p_{p['partner_id']}"):
                 db_api.delete_partner(p['partner_id']); st.rerun()
@@ -124,7 +157,7 @@ if st.session_state.role == "Admin":
         items = db_api.get_items_by_type(t_id)
         
         for it in items:
-            it1, it2 = st.columns([0.7, 0.3]) # 비율 조정
+            it1, it2 = st.columns([0.7, 0.3])
             it1.write(f"**{it['item_number']}. {it['item_name']}**")
             if it2.button("항목 제외", key=f"it_{it['item_id']}"):
                 success, msg = db_api.delete_inspection_item(it['item_id'])
@@ -196,9 +229,16 @@ else:
         ins_results = []
 
         for it in items:
-            st.divider()
             st.write(f"### {it['item_number']}. {it['item_name']}")
-            res = st.radio("상태", ["🟢 양호", "🟡 수리요", "🔴 불량", "⚫ 기타"], key=f"r_{it['item_id']}", horizontal=True)
+            
+            # CSS로 네모 버튼화 된 라디오 입력
+            res = st.radio(
+                "상태", 
+                ["🟢 양호", "🟡 수리요", "🔴 불량", "⚫ 기타"], 
+                key=f"r_{it['item_id']}", 
+                horizontal=True, 
+                label_visibility="collapsed"
+            )
             
             note, img_b64 = "", ""
             if res != "🟢 양호":
@@ -208,8 +248,8 @@ else:
                 note = st.text_area("📝 조치 사항 입력", key=f"n_{it['item_id']}")
             
             ins_results.append({"id": it['item_id'], "res": res, "note": note, "img": img_b64})
+            st.divider() # 항목 간 구분을 더 명확히
         
-        st.divider()
         if st.button("✅ 점검 결과 최종 제출", type="primary", use_container_width=True):
             for r in ins_results:
                 db_api.create_inspection_log(project_code, st.session_state.temp_reg, st.session_state.temp_p_id, r['id'], r['res'], r['note'], r['img'], st.session_state.temp_p_name)
