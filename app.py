@@ -9,10 +9,8 @@ import pandas as pd
 # --- [UI] 고령자 맞춤형 및 가로 폭 가득 채우는 CSS ---
 st.markdown("""
     <style>
-    /* 배경색 (GS E&C 스타일 밝은 회색) */
     body, .stApp { background-color: #f4f5f7 !important; }
     
-    /* 1. 입력창 & 셀렉트박스 글자 잘림 완벽 해결 */
     .stTextInput input, .stSelectbox div[data-baseweb="select"] {
         font-size: 1.1rem !important;
     }
@@ -22,7 +20,6 @@ st.markdown("""
         color: #122d43 !important;
     }
 
-    /* 2. 관리자 탭 및 카드 디자인 */
     div.stTabs [data-baseweb="tab-list"] { background-color: white; padding: 0; border-bottom: 2px solid #e9ecef; }
     div.stTabs [data-baseweb="tab"] { font-size: 18px !important; font-weight: bold; padding: 15px 20px; }
     
@@ -31,47 +28,31 @@ st.markdown("""
         margin-bottom: 15px; box-shadow: 0px 2px 5px rgba(0,0,0,0.05); border: 1px solid #e9ecef;
     }
 
-    /* 3. 라디오 버튼 -> 가로 100% 꽉 채우는 4색상 블록 버튼화 */
-    div[data-testid="stRadio"], 
-    div[data-testid="stRadio"] > div {
-        width: 100% !important;
-    }
-    
+    div[data-testid="stRadio"], div[data-testid="stRadio"] > div { width: 100% !important; }
     div[data-testid="stRadio"] div[role="radiogroup"] {
-        display: flex !important; 
-        flex-direction: row !important; 
-        gap: 8px !important; 
-        width: 100% !important;
-        justify-content: space-between !important;
+        display: flex !important; flex-direction: row !important; gap: 8px !important; 
+        width: 100% !important; justify-content: space-between !important;
     }
-    
     div[data-testid="stRadio"] div[role="radiogroup"] > label {
-        flex: 1 1 0px !important; 
-        width: 100% !important;
-        display: flex !important; 
-        justify-content: center !important; 
-        align-items: center !important;
-        padding: 15px 0px !important; 
-        border-radius: 8px !important; 
-        margin: 0 !important;
-        border: 2px solid transparent !important; 
-        cursor: pointer !important; 
-        transition: all 0.2s ease !important;
+        flex: 1 1 0px !important; width: 100% !important; display: flex !important; 
+        justify-content: center !important; align-items: center !important;
+        padding: 15px 0px !important; border-radius: 8px !important; margin: 0 !important;
+        border: 2px solid transparent !important; cursor: pointer !important; transition: all 0.2s ease !important;
     }
-    
     div[data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child { display: none !important; }
-    
     div[data-testid="stRadio"] div[role="radiogroup"] > label p {
-        margin: 0 !important; padding: 0 !important; 
-        font-weight: 900 !important; font-size: 18px !important;
+        margin: 0 !important; padding: 0 !important; font-weight: 900 !important; font-size: 18px !important;
         white-space: nowrap !important; word-break: keep-all !important; display: block !important;
     }
 
-    /* 버튼 색상 지정 */
     div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(1) { background-color: #78be20 !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(1) * { color: white !important; }
     div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(2) { background-color: #f2a900 !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(2) * { color: white !important; }
     div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(3) { background-color: #cf4520 !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(3) * { color: white !important; }
     div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(4) { background-color: #75787b !important; }
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child(4) * { color: white !important; }
 
     div[data-testid="stRadio"] div[role="radiogroup"] > label:has(input:not(:checked)) { opacity: 0.25 !important; }
     div[data-testid="stRadio"] div[role="radiogroup"] > label:has(input:checked) {
@@ -79,7 +60,6 @@ st.markdown("""
         box-shadow: 0px 4px 8px rgba(0,0,0,0.2) !important; border: 2px solid #122d43 !important;
     }
 
-    /* 4. 엑셀 다운로드 플로팅 버튼 고정 */
     .floating-excel-btn { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
     
     @media (max-width: 768px) {
@@ -90,7 +70,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 초기 설정
 st.set_page_config(page_title="GS E&C 안전관리", layout="wide", initial_sidebar_state="collapsed")
 
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
@@ -117,17 +96,14 @@ def to_excel(df_stats, df_logs):
         df_logs.to_excel(writer, index=False, sheet_name='점검 상세 내역')
     return output.getvalue()
 
-# --- 사이드바 (로고 파일 반영) ---
+# --- 사이드바 ---
 with st.sidebar:
-    # 🌟 깃허브에 올리신 GS_logo.png 파일을 불러옵니다.
     try:
         st.image("GS_logo.png", width=200)
     except:
-        # 파일이 없을 경우를 대비한 대체 로고 (필요 시 수정 가능)
         st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/GS_E%26C_logo.svg/512px-GS_E%26C_logo.svg.png", width=150)
     
     st.title("⚙️ 관리자 로그인")
-    
     if not st.session_state.logged_in:
         with st.form("login_form"):
             admin_id = st.text_input("아이디", value="gsmaster")
@@ -155,12 +131,10 @@ if st.session_state.role == "Admin":
     if col_l.button("◀ 이전일", use_container_width=True):
         st.session_state.target_date -= timedelta(days=1)
         st.rerun()
-    
     sel_date = col_d.date_input("조회일자", value=st.session_state.target_date, label_visibility="collapsed")
     if sel_date != st.session_state.target_date:
         st.session_state.target_date = sel_date
         st.rerun()
-        
     if col_r.button("다음일 ▶", use_container_width=True):
         st.session_state.target_date += timedelta(days=1)
         st.rerun()
@@ -184,20 +158,18 @@ if st.session_state.role == "Admin":
                     with col_done:
                         st.markdown("**✅ 점검 완료**")
                         if s['completed_list']:
-                            for c in s['completed_list']:
-                                st.write(f"- {c['reg']} ({c['partner']})")
+                            for c in s['completed_list']: st.write(f"- {c['reg']} ({c['partner']})")
                         else: st.write("없음")
                     with col_pending:
                         st.markdown("**❌ 미점검**")
                         if s['pending_list']:
-                            for p in s['pending_list']:
-                                st.write(f"- {p['reg']}")
+                            for p in s['pending_list']: st.write(f"- {p['reg']}")
                         else: st.write("모두 완료")
-        else:
-            st.info("데이터가 없습니다.")
+        else: st.info("데이터가 없습니다.")
 
+    # 🔥 수정: 일일점검 리스트 개별 수정/삭제 기능 추가 🔥
     with menu[1]: 
-        st.markdown("### 일일점검 리스트")
+        st.markdown("### 일일점검 리스트 수정 및 확인")
         if logs:
             grouped_logs = {}
             for l in logs:
@@ -230,9 +202,44 @@ if st.session_state.role == "Admin":
                         item_name = (d.get('inspection_items') or {}).get('item_name', '알수없음')
                         if item_name not in unique_items: unique_items[item_name] = d
                     
+                    # 각 항목별 수정/삭제 UI 생성
                     for item_name, d in unique_items.items():
-                        note = f"({d.get('inspection_note')})" if d.get('inspection_note') else ""
-                        st.write(f"- **{item_name}**: {d.get('status', '알수없음')} {note}")
+                        log_id = d.get('id')
+                        
+                        # 수정 모드일 때 (입력창으로 변환)
+                        if st.session_state.get(f"edit_log_{log_id}", False):
+                            st.write(f"**{item_name}**")
+                            # 상태 선택 박스
+                            status_options = ["양호", "수리요", "불량", "기타"]
+                            current_idx = status_options.index(d.get('status', '기타')) if d.get('status') in status_options else 3
+                            new_status = st.selectbox("상태 수정", status_options, index=current_idx, key=f"sel_{log_id}")
+                            new_note = st.text_input("비고 수정", value=d.get('inspection_note') or "", key=f"note_{log_id}")
+                            
+                            c_save, c_cancel = st.columns(2)
+                            if c_save.button("💾 저장", type="primary", key=f"save_{log_id}"):
+                                db_api.update_inspection_log(log_id, new_status, new_note)
+                                st.session_state[f"edit_log_{log_id}"] = False
+                                st.rerun()
+                            if c_cancel.button("취소", key=f"cancel_{log_id}"):
+                                st.session_state[f"edit_log_{log_id}"] = False
+                                st.rerun()
+                            st.write("---")
+                                
+                        # 일반 보기 모드일 때 (텍스트와 버튼)
+                        else:
+                            c_text, c_edit, c_del = st.columns([0.7, 0.15, 0.15])
+                            note = f"({d.get('inspection_note')})" if d.get('inspection_note') else ""
+                            c_text.write(f"- **{item_name}**: {d.get('status', '알수없음')} {note}")
+                            
+                            # log_id가 있는 정상적인 데이터만 수정/삭제 버튼 활성화
+                            if log_id:
+                                if c_edit.button("✏️ 수정", key=f"btn_edit_{log_id}", use_container_width=True):
+                                    st.session_state[f"edit_log_{log_id}"] = True
+                                    st.rerun()
+                                if c_del.button("🗑️ 삭제", key=f"btn_del_{log_id}", use_container_width=True):
+                                    db_api.delete_inspection_log(log_id)
+                                    st.toast("삭제되었습니다.")
+                                    st.rerun()
         else: st.info("기록이 없습니다.")
 
     with menu[2]: 
