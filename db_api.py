@@ -15,6 +15,7 @@ supabase: Client = init_connection()
 # [1] 관리자 대시보드 및 통계
 # ==========================================
 def get_daily_stats(target_date):
+    """(홈) 장비 종류별 점검 완료 대수 통계"""
     all_types = supabase.table("equipment_types").select("equipment_type_id, equipment_type").execute().data
     all_eqs = supabase.table("equipments").select("registration_number, equipment_type_id").execute().data
     logs = supabase.table("inspection_logs") \
@@ -28,17 +29,23 @@ def get_daily_stats(target_date):
         t_id = t['equipment_type_id']
         type_eqs = [e for e in all_eqs if e['equipment_type_id'] == t_id]
         done = len([e for e in type_eqs if e['registration_number'] in completed_regs])
-        stats.append({"type": t['equipment_type'], "total": len(type_eqs), "completed": done})
+        if type_eqs: # 등록된 장비가 있는 종류만 표시
+            stats.append({"type": t['equipment_type'], "total": len(type_eqs), "completed": done})
     return stats
+
+def get_daily_logs_summary(target_date):
+    """(일일점검현황 탭) 그날 점검한 장비 리스트와 상태 요약"""
+    res = supabase.table("inspection_logs") \
+        .select("created_at, registration_number, inspector, status, inspection_note, partners(partner_name), equipments(equipment_types(equipment_type), equipment_model), inspection_items(item_name)") \
+        .filter("created_at", "gte", f"{target_date}T00:00:00") \
+        .filter("created_at", "lte", f"{target_date}T23:59:59") \
+        .order("created_at", desc=True) \
+        .execute()
+    return res.data
 
 def get_daily_logs_for_excel(target_date):
     """엑셀 다운로드용 상세 점검 결과 조회"""
-    res = supabase.table("inspection_logs") \
-        .select("created_at, registration_number, inspector, status, inspection_note, partners(partner_name), inspection_items(item_name)") \
-        .filter("created_at", "gte", f"{target_date}T00:00:00") \
-        .filter("created_at", "lte", f"{target_date}T23:59:59") \
-        .execute()
-    return res.data
+    return get_daily_logs_summary(target_date)
 
 def get_all_equipments():
     return supabase.table("equipments").select("*, equipment_types(equipment_type)").execute().data
