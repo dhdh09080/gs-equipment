@@ -5,10 +5,10 @@ from io import BytesIO
 from PIL import Image
 from datetime import datetime
 
-# --- [UI] 모바일 최적화 및 4색상 네모 버튼 CSS 주입 ---
+# --- [UI] 모바일 최적화 및 컬러 블록 버튼 CSS ---
 st.markdown("""
     <style>
-    /* 1. 기본 버튼 및 텍스트 줄바꿈 설정 */
+    /* 1. 전체 텍스트 크기 상향 및 줄바꿈 정리 */
     .stButton button {
         white-space: nowrap !important;
         word-break: keep-all !important;
@@ -21,24 +21,23 @@ st.markdown("""
         word-break: keep-all !important;
     }
 
-    /* 🌟 2. 라디오 버튼을 4색 컬러 블록 버튼으로 완벽 변환 🌟 */
+    /* 🌟 2. 라디오 버튼 -> 4색상 대형 블록 버튼화 🌟 */
     
     /* 가로로 꽉 차게 4등분 배치 */
-    div[data-testid="stRadio"] div[role="radiogroup"] {
+    div[data-testid="stRadio"] > div[role="radiogroup"] {
         display: flex !important;
         flex-direction: row !important;
         gap: 8px !important;
-        flex-wrap: nowrap !important; /* 모바일에서도 무조건 한 줄 유지 */
         width: 100% !important;
     }
     
-    /* 각 옵션 라벨을 박스 형태로 디자인 */
-    div[data-testid="stRadio"] div[role="radiogroup"] label {
-        flex: 1 !important; /* 공간을 1/4씩 공평하게 나눠 가짐 */
+    /* 각 옵션을 네모 박스로 만들기 (Flex:1 로 가로를 똑같이 분배) */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label {
+        flex: 1 !important; 
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
-        padding: 15px 0 !important;
+        padding: 15px 0px !important; 
         border-radius: 8px !important;
         margin: 0 !important;
         border: 2px solid transparent !important;
@@ -46,65 +45,69 @@ st.markdown("""
         transition: all 0.2s ease !important;
     }
 
-    /* 기본 동그라미 아이콘 완벽하게 숨기기 */
-    div[data-testid="stRadio"] div[role="radiogroup"] label div:first-child {
+    /* 🔥 핵심 수정: 동그라미 기호만 정확하게 삭제 (글자는 건드리지 않음) */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:first-child {
         display: none !important;
     }
 
-    /* 버튼 안의 텍스트 설정 */
-    div[data-testid="stRadio"] div[role="radiogroup"] label p {
+    /* 글자가 강제로 보이도록 텍스트 영역 속성 강제 부여 */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:last-child,
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label p {
         margin: 0 !important;
+        padding: 0 !important;
         font-weight: 900 !important;
-        font-size: 16px !important; /* 모바일에서 깨지지 않게 글자크기 조정 */
+        font-size: 17px !important;
         white-space: nowrap !important;
+        visibility: visible !important;
+        display: block !important;
     }
 
-    /* --- [버튼별 고유 색상 지정] --- */
-    /* 1번: 양호 (초록) */
-    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(1) { background-color: #2b8a3e !important; }
-    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(1) p { color: white !important; }
+    /* --- [버튼별 고유 배경색 및 글자색 강제 적용] --- */
+    /* 1번: 양호 (초록 바탕, 흰 글씨) */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(1) { background-color: #2b8a3e !important; }
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(1) * { color: white !important; }
 
-    /* 2번: 수리요 (노랑) */
-    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(2) { background-color: #fcc419 !important; }
-    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(2) p { color: #212529 !important; }
+    /* 2번: 수리요 (노랑 바탕, 까만 글씨) */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(2) { background-color: #fcc419 !important; }
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(2) * { color: #212529 !important; }
 
-    /* 3번: 불량 (빨강) */
-    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(3) { background-color: #e03131 !important; }
-    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(3) p { color: white !important; }
+    /* 3번: 불량 (빨강 바탕, 흰 글씨) */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(3) { background-color: #e03131 !important; }
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(3) * { color: white !important; }
 
-    /* 4번: 기타 (회색) */
-    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(4) { background-color: #868e96 !important; }
-    div[data-testid="stRadio"] div[role="radiogroup"] label:nth-child(4) p { color: white !important; }
+    /* 4번: 기타 (회색 바탕, 흰 글씨) */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(4) { background-color: #868e96 !important; }
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:nth-child(4) * { color: white !important; }
 
-    /* --- [선택 및 미선택 상태 시각화] --- */
-    /* 선택되지 않은 버튼은 투명도를 낮춰 흐리게 (선택된 것 강조) */
-    div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:not(:checked)) {
-        opacity: 0.25 !important;
+    /* --- [선택 유무에 따른 효과] --- */
+    /* 선택되지 않은 버튼은 투명하게 */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:not(:checked)) {
+        opacity: 0.3 !important;
     }
     
-    /* 선택된 버튼은 진하게 + 까만 테두리와 그림자 */
-    div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
+    /* 선택된 버튼은 튀어나오는 효과와 진한 테두리 */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:checked) {
         opacity: 1.0 !important;
-        transform: scale(1.02);
-        box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+        transform: scale(1.05) !important;
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.2) !important;
         border: 2px solid #212529 !important;
     }
 
-    /* 3. 모바일/데스크탑 반응형 폰트 크기 */
+    /* 3. 모바일 화면 최적화 (가로 768px 이하) */
     @media (max-width: 768px) {
         html, body, [class*="st-"] { font-size: 16px !important; }
         .stButton button { font-size: 16px !important; }
         h1 { font-size: 26px !important; }
         h2 { font-size: 22px !important; }
         h3 { font-size: 18px !important; }
-        div[data-testid="stRadio"] div[role="radiogroup"] label p { font-size: 15px !important; } /* 네 칸이라 약간 작게 */
+        div[data-testid="stRadio"] > div[role="radiogroup"] > label p { font-size: 15px !important; }
     }
     @media (min-width: 769px) {
         html, body, [class*="st-"] { font-size: 20px !important; }
         h1 { font-size: 36px !important; }
         h2 { font-size: 28px !important; }
         h3 { font-size: 24px !important; }
-        div[data-testid="stRadio"] div[role="radiogroup"] label p { font-size: 18px !important; }
+        div[data-testid="stRadio"] > div[role="radiogroup"] > label p { font-size: 18px !important; }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -262,7 +265,7 @@ else:
         for it in items:
             st.write(f"### {it['item_number']}. {it['item_name']}")
             
-            # CSS로 네모 버튼화 된 라디오 입력 (이모티콘 제거, 상태 라벨 숨김)
+            # CSS로 완벽히 4색상 블록화된 라디오 버튼
             res = st.radio(
                 "상태", 
                 ["양호", "수리요", "불량", "기타"], 
