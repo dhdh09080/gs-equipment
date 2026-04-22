@@ -15,22 +15,50 @@ supabase: Client = init_connection()
 # [1] 관리자 대시보드 및 통계
 # ==========================================
 def get_daily_stats(target_date):
-    """(홈) 장비 종류별 점검 완료 대수 통계"""
+    """(홈) 장비 종류별 점검 완료/미완료 상세 통계"""
     all_types = supabase.table("equipment_types").select("equipment_type_id, equipment_type").execute().data
-    all_eqs = supabase.table("equipments").select("registration_number, equipment_type_id").execute().data
+    all_eqs = supabase.table("equipments").select("registration_number, equipment_type_id, equipment_model").execute().data
+    
+    # 점검 로그에서 파트너 정보까지 함께 가져옵니다.
     logs = supabase.table("inspection_logs") \
-        .select("registration_number") \
+        .select("registration_number, partners(partner_name)") \
         .filter("created_at", "gte", f"{target_date}T00:00:00") \
         .filter("created_at", "lte", f"{target_date}T23:59:59") \
         .execute().data
-    completed_regs = set(l['registration_number'] for l in logs)
+    
+    # 점검을 완료한 장비 번호와 해당 업체를 매핑
+    completed_info = {}
+    for l in logs:
+        reg = l['registration_number']
+        pt_data = l.get('partners') or {}
+        partner_name = pt_data.get('partner_name', '알수없음')
+        completed_info[reg] = partner_name
+
     stats = []
     for t in all_types:
         t_id = t['equipment_type_id']
+        # 해당 종류에 속하는 모든 등록 장비
         type_eqs = [e for e in all_eqs if e['equipment_type_id'] == t_id]
-        done = len([e for e in type_eqs if e['registration_number'] in completed_regs])
-        if type_eqs: # 등록된 장비가 있는 종류만 표시
-            stats.append({"type": t['equipment_type'], "total": len(type_eqs), "completed": done})
+        
+        completed_list = []
+        pending_list = []
+        
+        for e in type_eqs:
+            reg = e['registration_number']
+            model = e['equipment_model'] or ""
+            if reg in completed_info:
+                completed_list.append({"reg": reg, "model": model, "partner": completed_info[reg]})
+            else:
+                pending_list.append({"reg": reg, "model": model, "partner": "미점검 (업체미정)"})
+                
+        if type_eqs: # 등록된 장비가 1대라도 있는 종류만 통계에 포함
+            stats.append({
+                "type": t['equipment_type'],
+                "total": len(type_eqs),
+                "completed": len(completed_list),
+                "completed_list": completed_list,
+                "pending_list": pending_list
+            })
     return stats
 
 def get_daily_logs_summary(target_date):
@@ -44,7 +72,6 @@ def get_daily_logs_summary(target_date):
     return res.data
 
 def get_daily_logs_for_excel(target_date):
-    """엑셀 다운로드용 상세 점검 결과 조회"""
     return get_daily_logs_summary(target_date)
 
 def get_all_equipments():
